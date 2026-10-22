@@ -1,0 +1,22 @@
+# секреты
+.env
+# ОС и редакторы
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+# Node
+node_modules/
+dist/
+# Java
+target/
+build/
+.gradle/
+*.class
+# Python
+__pycache__/
+*.pyc
+.venv/
+# веса моделей
+*.gguf
+*.safetensors
