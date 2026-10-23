@@ -9,12 +9,22 @@ services:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Остальные сервисы подключаем по мере готовности:
-  # backend:         build: ./backend
+  mocks:
+    build: ./mocks
+    ports:
+      - "8001:8001"
+
+  # Подключаем по мере готовности:
+  # backend:         build: ./backend  (volumes: uploads:/app/uploads)
   # scoring-service: build: ./scoring-service
-  # mocks:           build: ./mocks
   # frontend:        build: ./frontend
 
 volumes:
   dbdata:
+  uploads:
