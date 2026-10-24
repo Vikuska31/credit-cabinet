@@ -1,0 +1,376 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap&subset=cyrillic');
+
+:root {
+  --brand-red: #ef3124;
+  --brand-red-dark: #d8221c;
+  --ink: #16181d;
+  --muted: #6b7280;
+  --line: #e8e9ec;
+  --bg: #f2f3f5;
+  --surface: #ffffff;
+  --shadow: 0 16px 40px rgba(23, 27, 38, 0.07);
+  --font-inter: 'Inter', -apple-system, 'Segoe UI', Arial, sans-serif;
+
+  /* Заставляем Core DS использовать Inter вместо Styrene/системного шрифта */
+  --font-family-system: var(--font-inter);
+  --font-family-styrene: var(--font-inter);
+  --font-family-alfasans: var(--font-inter);
+  --font-family: var(--font-inter);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+/* Только десктоп: макет рассчитан на экраны от 1280px */
+body {
+  min-width: 1280px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-inter);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--brand-red);
+}
+
+h1,
+h2 {
+  letter-spacing: -0.03em;
+}
+#root h1,
+#root h2 {
+  font-weight: 700;
+}
+
+.eyebrow {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.13em;
+  color: var(--brand-red) !important;
+}
+
+/* ---------- Теги (поверх Tag из Core DS) ---------- */
+#root .tag,
+#root .tag * {
+  font-weight: 700;
+}
+#root .tag * {
+  color: inherit;
+}
+#root .tag--red {
+  background: #ffe9e6;
+  color: #c72720;
+}
+#root .tag--green {
+  background: #eaf9d3;
+  color: #467900;
+}
+#root .tag--purple {
+  background: #f0e5ff;
+  color: #6925c7;
+}
+#root .tag--blue {
+  background: #e9f0ff;
+  color: #1749b2;
+}
+#root .tag--gray {
+  background: #f0f2f6;
+  color: #414550;
+}
+
+/* ---------- Layout ---------- */
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  height: 72px;
+  padding: 0 28px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+}
+
+.header__nav {
+  margin-left: auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.brand__mark {
+  font: 800 32px/1 var(--font-inter);
+  color: var(--brand-red);
+}
+.brand__name {
+  font-weight: 800;
+  font-size: 19px;
+  letter-spacing: -0.035em;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--brand-red);
+  color: #fff;
+  font: 700 14px var(--font-inter);
+  cursor: pointer;
+}
+.avatar:hover {
+  background: var(--brand-red-dark);
+}
+.avatar:focus-visible {
+  outline: 3px solid #0055ff88;
+  outline-offset: 2px;
+}
+
+.user-menu {
+  position: relative;
+}
+.user-menu__popup {
+  position: absolute;
+  right: 0;
+  top: 52px;
+  width: 260px;
+  padding: 16px;
+  display: grid;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(21, 26, 48, 0.2);
+}
+.user-menu__logout {
+  margin-top: 12px;
+}
+
+.layout__body {
+  flex: 1;
+  padding-left: 236px; /* ширина фиксированного Sidebar */
+}
+
+.sidebar {
+  position: fixed;
+  top: 72px;
+  bottom: 0;
+  left: 0;
+  width: 236px;
+  padding: 24px 14px;
+  overflow-y: auto;
+  background: var(--surface);
+  border-right: 1px solid var(--line);
+}
+.sidebar__nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sidebar__link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  color: #414550;
+  font-weight: 600;
+  text-decoration: none;
+}
+.sidebar__link:hover,
+.sidebar__link.is-active {
+  background: #fff0ef;
+  color: var(--brand-red);
+}
+.sidebar__icon {
+  width: 20px;
+  text-align: center;
+}
+
+.content {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 32px clamp(16px, 4vw, 56px) 80px;
+}
+
+.page-head {
+  margin-bottom: 24px;
+}
+.page-head h1 {
+  margin: 0 0 4px;
+}
+
+/* ---------- Home ---------- */
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.panel {
+  min-height: 220px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  box-shadow: var(--shadow);
+}
+.panel h2 {
+  margin: 0;
+}
+.panel--accent {
+  background: linear-gradient(120deg, #ef3124, #fb514b);
+  border-color: transparent;
+  color: #fff;
+}
+.panel--accent h2,
+.panel--accent .panel__text {
+  color: #fff;
+}
+.panel__text {
+  opacity: 0.92;
+}
+.panel__loader {
+  flex: 1;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+.panel--accent .button,
+.panel--accent button {
+  margin-top: auto;
+}
+
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  flex: 1;
+  width: 100%;
+  padding: 18px;
+  border: 1px dashed #d4d7de;
+  border-radius: 14px;
+  background: #fafbfc;
+}
+.empty button {
+  margin-top: auto;
+}
+
+.app-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+}
+.app-card__facts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+}
+.app-card__facts > div {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f6f7f9;
+}
+.app-card__facts dt {
+  font-size: 12px;
+  color: var(--muted);
+}
+.app-card__facts dd {
+  margin: 2px 0 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+/* ---------- Login ---------- */
+.login {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+}
+.login__brand {
+  position: relative;
+  padding: clamp(32px, 6vw, 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 16px;
+  overflow: hidden;
+  background: radial-gradient(circle at 85% 90%, #ffe3e0 0, transparent 45%), #fff;
+}
+.login__logo {
+  font: 900 96px/1 var(--font-inter);
+  color: var(--brand-red);
+  filter: drop-shadow(8px 10px 2px #d6d9df);
+}
+.login__title {
+  margin: 0;
+  max-width: 560px;
+}
+.login__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.login__card-art {
+  margin-top: 16px;
+}
+.login__panel {
+  padding: 32px;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+}
+.login__form {
+  width: min(420px, 100%);
+  padding: 32px;
+  display: grid;
+  gap: 16px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+}
+.login__form h2 {
+  margin: 0;
+}
