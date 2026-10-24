@@ -29,9 +29,8 @@ import java.util.Set;
 import static ru.creditcabinet.backend.common.Money.rub;
 
 /**
- * ВРЕМЕННЫЕ демоданные в коде: зеркало data/demo-profiles/profiles.json (Вика).
- * Когда подключим Spring, заменим на чтение профилей и на HTTP-клиенты к mocks/ и documents-service/.
- * Нужны, чтобы ядро можно было запускать и проверять уже сейчас.
+ * Тестовая фикстура для ядра без Spring и без файлов: зеркало профилей Вики с возможностью
+ * имитировать сбой источника и добавлять документы. В приложении её заменяет ProfilesDirectory.
  */
 public class DemoSeed implements CompanyDirectory, BankDataSource, DocumentCatalog {
     public static final String IP_INN = "772000000001";

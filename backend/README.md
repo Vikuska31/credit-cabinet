@@ -1,6 +1,6 @@
 # backend — ядро (Федя)
 
-Java 21, Spring Boot 4.1.2, Maven. Бизнес-логика на чистой Java (без зависимости от Spring), поверх неё пакеты `config` (сборка бинов) и `web` (REST).
+Java 21, Spring Boot 4.1.2, Maven, PostgreSQL. Бизнес-логика на чистой Java (без зависимости от Spring), поверх неё пакеты `config` (сборка бинов), `web` (REST), `storage` и `profiles` (внешние данные).
 
 ## Что внутри (`src/main/java/ru/creditcabinet/backend`)
 
@@ -12,18 +12,55 @@ Java 21, Spring Boot 4.1.2, Maven. Бизнес-логика на чистой J
 | `auth` | Вход по паролю (PBKDF2) и по кнопке демопрофиля, роли CLIENT/EMPLOYEE, профиль компании |
 | `inquiry` | Запрос сотруднику по неясной цели «Другое» |
 | `notification` | Уведомления клиенту и сотрудникам |
-| `bank`, `application.DocumentCatalog` | Интерфейсы к мокам Вики и documents-service |
-| `demo` | **Временные** демоданные в коде (зеркало `data/demo-profiles/profiles.json`) |
+| `bank`, `application.DocumentCatalog` | Интерфейсы источников и библиотеки документов |
+| `profiles` | Чтение профилей Вики, клиенты к её мокам и `documents-service` |
+| `storage` | Хранение в PostgreSQL (JDBC): заявки, уведомления, вопросы по цели |
 
 ## Запуск и проверка
 
 ```bash
+docker compose up -d db          # PostgreSQL на localhost:5432 (из корня репозитория, нужен .env)
 cd backend
-./mvnw spring-boot:run   # сервер на http://localhost:8080
-./mvnw test              # сценарии ядра + сквозной HTTP-сценарий
+./mvnw spring-boot:run           # http://localhost:8080
+./mvnw test                      # ядро + HTTP-сценарии; тест на PostgreSQL пропускается, если БД не запущена
 ```
 
-REST-описание: `docs/api.md`. Хранилище пока в памяти (БД подключим отдельным шагом), поэтому после перезапуска заявки пропадают.
+Без БД для быстрой отладки: `APP_STORAGE=memory ./mvnw spring-boot:run` (отключите Flyway: `SPRING_FLYWAY_ENABLED=false`).
+
+### Переменные окружения
+
+| Переменная | По умолчанию | Назначение |
+|---|---|---|
+| `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` | localhost, 5432, credit_cabinet, app, change_me | PostgreSQL |
+| `PROFILES_FILE` | `../data/demo-profiles/profiles.json` | Демопрофили Вики (в контейнере `/data/demo-profiles/profiles.json`) |
+| `MOCKS_URL` | пусто | Моки банковских источников, например `http://mocks:8001`. Пусто = читать `bank_data` из `profiles.json` |
+| `DOCUMENTS_URL` | пусто | `documents-service`. Пусто = документы из `profiles.json` |
+| `STAFF_LOGIN`, `STAFF_PASSWORD` | employee, employee1234 | Запасной сотрудник, если в `profiles.json` нет секции `employees` |
+
+### Контейнер
+
+```bash
+docker build -t credit-cabinet-backend backend
+```
+Пример сервиса для `docker-compose.yml` (подключает Вика):
+```yaml
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DB_HOST: db
+      MOCKS_URL: http://mocks:8001
+      PROFILES_FILE: /data/demo-profiles/profiles.json
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+```
+
+REST-описание: `docs/api.md`. Модель данных: `docs/data-model.md`. Состояния заявки: `docs/state-diagram.md`.
 Тестовые входы: `demo.ip`, `demo.ooo`, `demo.risk` (пароль `demo1234`) и кнопки демопрофилей; сотрудник `employee` / `employee1234` через `/api/auth/staff/login`.
 
 ## Допущения, которые нужно утвердить

@@ -46,5 +46,18 @@
 ### Прочее
 `POST /goal-inquiries {text}`, `GET /goal-inquiries` — «Передать вопрос сотруднику»; `GET /notifications`, `POST /notifications/{id}/read`; `GET /health`.
 
-## Внутреннее API
-_Моки (Вика): `GET /bank-data/{inn}`. Документы и ИИ — после согласования форматов._
+## Внутреннее API (backend → другие сервисы)
+
+### Моки банковских источников (Вика, уже есть)
+`GET {MOCKS_URL}/bank-data/{inn}` → блоки `registry`, `credit_history`, `obligations`, `overdue`, `inflows` (формат — `data/demo-profiles/profiles.json`, раздел `bank_data`). Отсутствующий блок или поле backend считает неизвестным, а не нулём. Таймаут 10 с; любой сбой или 503 → заявка получает статус «Проверка не завершена» и повтор, а не отказ.
+
+### documents-service (Вика, контракт предложен backend-ом)
+`GET {DOCUMENTS_URL}/companies/{inn}/documents` → список:
+```json
+[{ "id": "d-1", "type": "FINANCIAL_SUMMARY", "title": "Финансовая сводка · июль–сентябрь 2026",
+   "periodFrom": "2026-07", "periodTo": "2026-09", "version": 1, "uploadedAt": "2026-10-05T09:00:00Z" }]
+```
+`type`: `FINANCIAL_SUMMARY`, `TAX_DECLARATION`, `ACCOUNTING_REPORTS`, `TAX_DEBT_CERTIFICATE`, `PURCHASE_DOCUMENT`, `REPAIR_ESTIMATE`, `PREMISES_RIGHTS`. Для документов без периода `periodFrom`/`periodTo` = `null`. Загрузка, версии и скачивание файла идут напрямую из браузера в documents-service или через её прокси, backend нужен только список. Если сервис недоступен, библиотека считается пустой.
+
+### Помощник с маскотом (Егор)
+Контракт не согласован. Предложение: `POST {AI_URL}/assistant` с `{text, context}` → `{intent, goals, amount, termMonths, clarifyingQuestion, buttons}`; backend проверяет поля, неизвестные действия отбрасывает, подстановка только после подтверждения клиентом.

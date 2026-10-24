@@ -5,7 +5,7 @@ import ru.creditcabinet.backend.auth.AuthService;
 import ru.creditcabinet.backend.auth.Principal;
 import ru.creditcabinet.backend.auth.ProfileService;
 import ru.creditcabinet.backend.config.WebConfig;
-import ru.creditcabinet.backend.demo.DemoSeed;
+import ru.creditcabinet.backend.profiles.ProfilesDirectory;
 import ru.creditcabinet.backend.domain.Role;
 
 import java.util.List;
@@ -18,10 +18,10 @@ public class AuthController {
     public record LoginResponse(String token, Role role, String fullName, String companyInn) {}
 
     private final AuthService auth;
-    private final DemoSeed seed;
+    private final ProfilesDirectory seed;
     private final ProfileService profiles;
 
-    public AuthController(AuthService auth, DemoSeed seed, ProfileService profiles) {
+    public AuthController(AuthService auth, ProfilesDirectory seed, ProfileService profiles) {
         this.auth = auth;
         this.seed = seed;
         this.profiles = profiles;
@@ -41,12 +41,12 @@ public class AuthController {
     }
 
     @GetMapping("/auth/demo-profiles")
-    public List<DemoSeed.DemoProfile> demoProfiles() { return seed.demoProfiles(); }
+    public List<ProfilesDirectory.DemoProfile> demoProfiles() { return seed.demoProfiles(); }
 
     @PostMapping("/auth/demo-login")
     public LoginResponse demoLogin(@RequestBody DemoLoginRequest r) {
         String login = seed.demoProfiles().stream().filter(p -> p.id().equals(r.profileId()))
-                .map(DemoSeed.DemoProfile::login).findFirst()
+                .map(ProfilesDirectory.DemoProfile::login).findFirst()
                 .orElseThrow(() -> ru.creditcabinet.backend.common.ApiException.notFound("Демопрофиль не найден"));
         return response(auth.loginDemoProfile(login));
     }

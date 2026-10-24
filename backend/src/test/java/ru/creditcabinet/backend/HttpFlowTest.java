@@ -17,18 +17,28 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /** Сквозной сценарий через HTTP: вход демопрофилем → черновик → отправка → решение → выдача. */
-@SpringBootTest
+@SpringBootTest(properties = {"app.storage=memory", "spring.flyway.enabled=false"})
 @AutoConfigureMockMvc
 class HttpFlowTest {
     @Autowired MockMvc mvc;
 
-    private static String field(String json, String name) {
+    static String field(String json, String name) {
         Matcher m = Pattern.compile("\"" + name + "\":\"([^\"]*)\"").matcher(json);
         assertTrue(m.find(), "нет поля " + name + " в " + json);
         return m.group(1);
     }
 
-    private String body(MvcResult r) throws Exception { return r.getResponse().getContentAsString(); }
+    String body(MvcResult r) throws Exception { return r.getResponse().getContentAsString(); }
+
+    String tokenForProfile(String profileId) throws Exception {
+        return field(body(mvc.perform(post("/api/auth/demo-login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"profileId\":\"" + profileId + "\"}")).andExpect(status().isOk()).andReturn()), "token");
+    }
+
+    String staffToken() throws Exception {
+        return field(body(mvc.perform(post("/api/auth/staff/login").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"login\":\"employee\",\"password\":\"employee1234\"}")).andExpect(status().isOk()).andReturn()), "token");
+    }
 
     @Test
     void requiresLogin() throws Exception {

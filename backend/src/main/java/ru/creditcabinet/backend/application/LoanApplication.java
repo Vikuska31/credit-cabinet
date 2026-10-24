@@ -53,6 +53,46 @@ public class LoanApplication {
         this.createdAt = createdAt;
     }
 
+    /** Полное сохраняемое состояние (для БД). */
+    public record Snapshot(String id, long number, String companyInn, Instant createdAt, ApplicationStatus status, int step,
+                           Set<LoanGoal> goals, String otherGoalText, LoanGoal otherGoalCategory, BigDecimal amount,
+                           Integer termMonths, LoanOffer.Kind selectedKind, BigDecimal monthlyIncomeRub,
+                           BigDecimal monthlyExpensesRub, List<String> attachedDocumentIds, boolean consent,
+                           LoanOffer submittedOffer, Instant submittedAt, BankData bankDataSnapshot, Decision decision,
+                           LoanOffer finalOffer, Instant issuedAt, List<Decision.ClarificationRequest> openRequests,
+                           List<HistoryEvent> history) {}
+
+    public Snapshot snapshot() {
+        return new Snapshot(id, number, companyInn, createdAt, status, step, Set.copyOf(goals), otherGoalText, otherGoalCategory,
+                amount, termMonths, selectedKind, monthlyIncomeRub, monthlyExpensesRub, List.copyOf(attachedDocumentIds), consent,
+                submittedOffer, submittedAt, bankDataSnapshot, decision, finalOffer, issuedAt, openRequests, List.copyOf(history));
+    }
+
+    public static LoanApplication restore(Snapshot s) {
+        LoanApplication a = new LoanApplication(s.id(), s.number(), s.companyInn(), s.createdAt());
+        a.status = s.status();
+        a.step = s.step();
+        a.setGoals(s.goals() == null ? Set.of() : s.goals());
+        a.otherGoalText = s.otherGoalText();
+        a.otherGoalCategory = s.otherGoalCategory();
+        a.amount = s.amount();
+        a.termMonths = s.termMonths();
+        a.selectedKind = s.selectedKind() == null ? LoanOffer.Kind.REQUESTED : s.selectedKind();
+        a.monthlyIncomeRub = s.monthlyIncomeRub();
+        a.monthlyExpensesRub = s.monthlyExpensesRub();
+        if (s.attachedDocumentIds() != null) a.attachedDocumentIds.addAll(s.attachedDocumentIds());
+        a.consent = s.consent();
+        a.submittedOffer = s.submittedOffer();
+        a.submittedAt = s.submittedAt();
+        a.bankDataSnapshot = s.bankDataSnapshot();
+        a.decision = s.decision();
+        a.finalOffer = s.finalOffer();
+        a.issuedAt = s.issuedAt();
+        a.openRequests = s.openRequests() == null ? List.of() : List.copyOf(s.openRequests());
+        if (s.history() != null) a.history.addAll(s.history());
+        return a;
+    }
+
     void transitionTo(ApplicationStatus next) {
         if (!status.next().contains(next)) {
             throw ApiException.conflict("invalid_transition",

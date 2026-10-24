@@ -42,7 +42,7 @@ public class ScenarioCheck {
         DemoSeed seed = new DemoSeed();
         AuthService auth = new AuthService();
         seed.registerAccounts(auth);
-        NotificationService notes = new NotificationService(clock);
+        NotificationService notes = new NotificationService(new ru.creditcabinet.backend.notification.InMemoryNotificationRepository(), clock);
         ApplicationService apps = new ApplicationService(new InMemoryApplicationRepository(), seed, seed, seed, calc,
                 new DecisionEngine(calc, clock), notes, clock);
 
