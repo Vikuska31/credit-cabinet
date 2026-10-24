@@ -142,6 +142,22 @@ public class ScenarioCheck {
         ApplicationView s7 = apps.requestClarification(emp, d7.id(), "purpose", null, "Уточните назначение суммы");
         check(s7.status() == ApplicationStatus.NEEDS_CLARIFICATION && !notes.list(ooo).isEmpty(), "запрос сотрудника → статус и уведомление клиенту");
 
+        // --- Полный пакет для суммы выше порога ---
+        ApplicationView d8 = apps.createDraft(ooo);
+        apps.updateDraft(ooo, d8.id(), new DraftUpdate(Set.of(LoanGoal.REPAIR, LoanGoal.GOODS), null, null, new BigDecimal("5000000"), 36,
+                LoanOffer.Kind.REQUESTED, null, null, null, true, 4));
+        check(apps.documentChecks(ooo, d8.id()).size() == 6, "ООО, 5 млн, ремонт: сводка, декларация, отчётность, справка ФНС, смета, помещение");
+        seed.addDocument(new DocumentRef("d8-est", DemoSeed.OOO_INN, DocumentType.REPAIR_ESTIMATE, "Смета", null, null, 1, Instant.parse("2026-10-20T09:00:00Z")));
+        seed.addDocument(new DocumentRef("d8-lease", DemoSeed.OOO_INN, DocumentType.PREMISES_RIGHTS, "Аренда", null, null, 1, Instant.parse("2026-10-20T09:00:00Z")));
+        apps.attachSuggested(ooo, d8.id());
+        ApplicationView s8 = apps.submit(ooo, d8.id());
+        check(s8.status() == ApplicationStatus.NEEDS_CLARIFICATION && s8.decision().requests().size() == 3, "без отчётности и справки ФНС — запрос трёх документов, не отказ");
+        seed.addDocument(new DocumentRef("d8-tax", DemoSeed.OOO_INN, DocumentType.TAX_DECLARATION, "Декларация 2025", YearMonth.of(2025, 1), YearMonth.of(2025, 12), 1, Instant.parse("2026-04-20T09:00:00Z")));
+        seed.addDocument(new DocumentRef("d8-acc", DemoSeed.OOO_INN, DocumentType.ACCOUNTING_REPORTS, "Отчётность 2025", YearMonth.of(2025, 1), YearMonth.of(2025, 12), 1, Instant.parse("2026-04-20T09:00:00Z")));
+        seed.addDocument(new DocumentRef("d8-cert", DemoSeed.OOO_INN, DocumentType.TAX_DEBT_CERTIFICATE, "Справка ФНС", null, null, 1, Instant.parse("2026-10-15T09:00:00Z")));
+        ApplicationView s8b = apps.respondToClarification(ooo, d8.id(), Set.of("d8-tax", "d8-acc", "d8-cert"), null, null);
+        check(s8b.status() != ApplicationStatus.NEEDS_CLARIFICATION && s8b.status() != ApplicationStatus.CHECK_FAILED, "с полным пакетом заявка доходит до решения: " + s8b.status());
+
         // --- Доступ ---
         check(expectError(() -> apps.get(ip, d2.id())).status() == 404, "чужая заявка клиенту недоступна");
         check(expectError(() -> apps.get(emp, d5.id())).status() == 404, "сотрудник не видит чужие черновики");

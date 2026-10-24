@@ -16,11 +16,13 @@ public record Tariff(
         BigDecimal upfrontFeePercent,
         BigDecimal maxDebtLoadRatio,
         int minBusinessAgeMonths,
-        int maxPastOverdueDays) {
+        int maxPastOverdueDays,
+        BigDecimal fullPackageThreshold) {
 
     public static final Tariff DEMO = new Tariff(
             new BigDecimal("300000"), new BigDecimal("10000000"),
             6, 60, 12,
             new BigDecimal("21.0"), new BigDecimal("1.0"),
-            new BigDecimal("0.35"), 6, 30);
+            new BigDecimal("0.35"), 6, 30,
+            new BigDecimal("3000000"));
 }

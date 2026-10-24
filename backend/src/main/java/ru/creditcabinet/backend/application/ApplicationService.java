@@ -10,6 +10,7 @@ import ru.creditcabinet.backend.decision.Decision.ClarificationRequest;
 import ru.creditcabinet.backend.decision.DecisionEngine;
 import ru.creditcabinet.backend.domain.Company;
 import ru.creditcabinet.backend.domain.DocumentRef;
+import ru.creditcabinet.backend.domain.DocumentRequirements;
 import ru.creditcabinet.backend.domain.DocumentType;
 import ru.creditcabinet.backend.domain.LoanGoal;
 import ru.creditcabinet.backend.notification.NotificationService;
@@ -139,22 +140,21 @@ public class ApplicationService {
 
     private List<DocumentCheck> buildChecks(LoanApplication a) {
         List<DocumentRef> library = documents.listByCompany(a.companyInn());
+        Company company = companies.findByInn(a.companyInn()).orElseThrow(() -> ApiException.notFound("Компания не найдена"));
         List<DocumentCheck> checks = new ArrayList<>();
-        YearMonth last = YearMonth.from(LocalDate.now(clock)).minusMonths(1);
-        checks.add(check(a, library, DocumentType.FINANCIAL_SUMMARY, false, d -> d.covers(last.minusMonths(2), last)));
-        for (LoanGoal g : a.effectiveGoals()) {
-            g.requiredDocument().ifPresent(type -> checks.add(check(a, library, type, true, d -> true)));
+        for (DocumentRequirements.Requirement r : DocumentRequirements.forApplication(company.form(), a.effectiveGoals(),
+                a.amount(), calculator.tariff().fullPackageThreshold(), LocalDate.now(clock))) {
+            checks.add(check(a, library, r));
         }
         return checks;
     }
 
-    private DocumentCheck check(LoanApplication a, List<DocumentRef> library, DocumentType type, boolean blocks,
-                                java.util.function.Predicate<DocumentRef> suitable) {
+    private DocumentCheck check(LoanApplication a, List<DocumentRef> library, DocumentRequirements.Requirement r) {
         Comparator<DocumentRef> newest = Comparator.comparing(DocumentRef::uploadedAt);
-        Optional<DocumentRef> attached = library.stream().filter(d -> d.type() == type)
-                .filter(d -> a.attachedDocumentIds().contains(d.id())).filter(suitable).max(newest);
-        Optional<DocumentRef> suggested = library.stream().filter(d -> d.type() == type).filter(suitable).max(newest);
-        return new DocumentCheck(type, blocks, attached.orElse(null),
+        Optional<DocumentRef> attached = library.stream().filter(d -> d.type() == r.type())
+                .filter(d -> a.attachedDocumentIds().contains(d.id())).filter(r.suitable()).max(newest);
+        Optional<DocumentRef> suggested = library.stream().filter(d -> d.type() == r.type()).filter(r.suitable()).max(newest);
+        return new DocumentCheck(r.type(), r.blocksSubmit(), r.reason(), attached.orElse(null),
                 attached.isPresent() ? null : suggested.orElse(null));
     }
 

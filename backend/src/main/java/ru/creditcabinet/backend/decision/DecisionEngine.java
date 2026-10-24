@@ -8,6 +8,7 @@ import ru.creditcabinet.backend.decision.Decision.Outcome;
 import ru.creditcabinet.backend.decision.Decision.Reason;
 import ru.creditcabinet.backend.domain.Company;
 import ru.creditcabinet.backend.domain.DocumentRef;
+import ru.creditcabinet.backend.domain.DocumentRequirements;
 import ru.creditcabinet.backend.domain.DocumentType;
 import ru.creditcabinet.backend.domain.LoanGoal;
 import ru.creditcabinet.backend.tariff.LoanCalculator;
@@ -76,23 +77,13 @@ public class DecisionEngine {
 
         // 2. Недостающие сведения и документы
         List<ClarificationRequest> requests = new ArrayList<>();
-        YearMonth last = YearMonth.from(today).minusMonths(1);
-        YearMonth first = last.minusMonths(2);
-        boolean hasSummary = in.documents().stream().anyMatch(doc ->
-                doc.type() == DocumentType.FINANCIAL_SUMMARY && doc.covers(first, last));
-        if (!hasSummary) {
-            requests.add(new ClarificationRequest("financial_summary", DocumentType.FINANCIAL_SUMMARY,
-                    "Нужна финансовая сводка за %s – %s: доходы и операционные расходы по месяцам. Поступления на счёт не равны прибыли."
-                            .formatted(first, last)));
-        }
-        for (LoanGoal goal : in.goals()) {
-            goal.requiredDocument().ifPresent(type -> {
-                boolean has = in.documents().stream().anyMatch(doc -> doc.type() == type);
-                if (!has) {
-                    requests.add(new ClarificationRequest("document_" + type.name().toLowerCase(), type,
-                            "Для цели «%s» нужен документ: %s".formatted(goal.title(), type.title())));
-                }
-            });
+        for (DocumentRequirements.Requirement req : DocumentRequirements.forApplication(in.company().form(), in.goals(),
+                in.selectedOffer().amount(), t.fullPackageThreshold(), today)) {
+            boolean has = in.documents().stream().anyMatch(doc -> doc.type() == req.type() && req.suitable().test(doc));
+            if (!has) {
+                requests.add(new ClarificationRequest("document_" + req.type().name().toLowerCase(), req.type(),
+                        "Нужен документ: %s. %s".formatted(req.type().title(), req.reason())));
+            }
         }
         BankData.Inflows inflows = d.inflows();
         if (inflows == null || inflows.meta().completeness() != Completeness.FULL || inflows.totalRub() == null) {
