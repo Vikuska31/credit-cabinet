@@ -1,0 +1,99 @@
+[
+  {
+    "id": "ip-novichok",
+    "title": "ИП новичок",
+    "user": { "login": "demo.ip", "password": "demo1234", "full_name": "Смирнов Алексей Петрович" },
+    "company": {
+      "form": "ИП",
+      "name": "ИП Смирнов Алексей Петрович",
+      "inn": "772000000001",
+      "registered_at": "2024-02-12",
+      "okved_code": "47.91",
+      "okved_title": "Розничная торговля через интернет"
+    },
+    "bank_data": {
+      "registry": { "source": "Реестр (имитация)", "as_of": "2026-10-20", "completeness": "full", "status": "active" },
+      "credit_history": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "exists": false },
+      "obligations": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "active_loans_count": 0, "monthly_payments_rub": 0.00 },
+      "overdue": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "current": false, "past_count": 0, "max_days": 0 },
+      "inflows": {
+        "source": "Счета клиента в банке (имитация)", "as_of": "2026-10-20", "completeness": "full",
+        "period_from": "2026-07-01", "period_to": "2026-09-30",
+        "by_month_rub": [
+          { "month": "2026-07", "amount_rub": 420000.00 },
+          { "month": "2026-08", "amount_rub": 450000.00 },
+          { "month": "2026-09", "amount_rub": 480000.00 }
+        ],
+        "total_rub": 1350000.00
+      }
+    },
+    "documents": [],
+    "expected_outcome": "needs_info"
+  },
+  {
+    "id": "ooo-istoriya",
+    "title": "ООО с историей",
+    "user": { "login": "demo.ooo", "password": "demo1234", "full_name": "Петрова Мария Сергеевна" },
+    "company": {
+      "form": "ООО",
+      "name": "ООО «Северный ветер»",
+      "inn": "7701000001",
+      "registered_at": "2019-03-14",
+      "okved_code": "46.39",
+      "okved_title": "Оптовая торговля продуктами питания"
+    },
+    "bank_data": {
+      "registry": { "source": "Реестр (имитация)", "as_of": "2026-10-20", "completeness": "full", "status": "active" },
+      "credit_history": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "exists": true, "closed_loans_count": 2 },
+      "obligations": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "active_loans_count": 1, "monthly_payments_rub": 95000.00, "outstanding_rub": 1800000.00 },
+      "overdue": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "current": false, "past_count": 0, "max_days": 0 },
+      "inflows": {
+        "source": "Счета клиента в банке (имитация)", "as_of": "2026-10-20", "completeness": "full",
+        "period_from": "2026-07-01", "period_to": "2026-09-30",
+        "by_month_rub": [
+          { "month": "2026-07", "amount_rub": 2800000.00 },
+          { "month": "2026-08", "amount_rub": 3100000.00 },
+          { "month": "2026-09", "amount_rub": 2900000.00 }
+        ],
+        "total_rub": 8800000.00
+      }
+    },
+    "documents": [
+      { "type": "financial_summary", "title": "Финансовая сводка · июль–сентябрь 2026", "period": "2026-07..2026-09", "version": 1, "file": "demo-documents/ooo-istoriya-summary.pdf" }
+    ],
+    "expected_outcome": "approved"
+  },
+  {
+    "id": "risk-prosrochki",
+    "title": "Риск просрочки",
+    "user": { "login": "demo.risk", "password": "demo1234", "full_name": "Кузнецов Дмитрий Олегович" },
+    "company": {
+      "form": "ООО",
+      "name": "ООО «Меридиан»",
+      "inn": "7702000002",
+      "registered_at": "2020-06-01",
+      "okved_code": "43.21",
+      "okved_title": "Электромонтажные работы"
+    },
+    "bank_data": {
+      "registry": { "source": "Реестр (имитация)", "as_of": "2026-10-20", "completeness": "full", "status": "active" },
+      "credit_history": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "exists": true, "closed_loans_count": 1 },
+      "obligations": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "active_loans_count": 2, "monthly_payments_rub": 210000.00, "outstanding_rub": 6400000.00 },
+      "overdue": { "source": "БКИ (имитация)", "as_of": "2026-10-20", "completeness": "full", "current": true, "current_days": 18, "past_count": 2, "max_days": 45 },
+      "inflows": {
+        "source": "Счета клиента в банке (имитация)", "as_of": "2026-10-20", "completeness": "full",
+        "period_from": "2026-07-01", "period_to": "2026-09-30",
+        "by_month_rub": [
+          { "month": "2026-07", "amount_rub": 1900000.00 },
+          { "month": "2026-08", "amount_rub": 1500000.00 },
+          { "month": "2026-09", "amount_rub": 1700000.00 }
+        ],
+        "total_rub": 5100000.00
+      }
+    },
+    "documents": [
+      { "type": "financial_summary", "title": "Финансовая сводка · июль–сентябрь 2026", "period": "2026-07..2026-09", "version": 1, "file": "demo-documents/risk-prosrochki-summary.pdf" }
+    ],
+    "expected_outcome": "rejected"
+  }
+]

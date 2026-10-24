@@ -1,4 +1,5 @@
 services:
+  # База данных
   db:
     image: postgres:16
     environment:
@@ -9,12 +10,55 @@ services:
       - "5432:5432"
     volumes:
       - dbdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
-  # Остальные сервисы подключаем по мере готовности:
-  # backend:         build: ./backend
-  # scoring-service: build: ./scoring-service
-  # mocks:           build: ./mocks
-  # frontend:        build: ./frontend
+  # Моки банковских источников (имитация)
+  mocks:
+    build: ./mocks
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./data:/data:ro
 
+  # Подключаем по мере готовности. Убрать "#" в начале строк,
+  # когда у сервиса появится Dockerfile.
+  #
+  # backend:
+  #   build: ./backend
+  #   env_file: .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8080:8080"
+  #
+  # documents-service:
+  #   build: ./documents-service
+  #   env_file: .env
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   ports:
+  #     - "8002:8002"
+  #   volumes:
+  #     - uploads:/app/uploads
+  #
+  # ai-service:
+  #   build: ./ai-service
+  #   env_file: .env
+  #   ports:
+  #     - "8003:8003"
+  #
+  # frontend:
+  #   build: ./frontend
+  #   ports:
+  #     - "3000:3000"
+
+# Именованные хранилища: объявляются здесь, на самом нижнем уровне
 volumes:
   dbdata:
+  uploads:
