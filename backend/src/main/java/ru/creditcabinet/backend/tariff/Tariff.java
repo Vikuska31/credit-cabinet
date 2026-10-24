@@ -19,7 +19,7 @@ public record Tariff(
         int maxPastOverdueDays) {
 
     public static final Tariff DEMO = new Tariff(
-            new BigDecimal("100000"), new BigDecimal("10000000"),
+            new BigDecimal("300000"), new BigDecimal("10000000"),
             6, 60, 12,
             new BigDecimal("21.0"), new BigDecimal("1.0"),
             new BigDecimal("0.35"), 6, 30);
