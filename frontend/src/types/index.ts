@@ -48,3 +48,14 @@ export const FINAL_APPLICATION_STATUSES: ApplicationStatus[] = [
   'declined',
   'issued',
 ];
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  minAmount: number;
+  maxAmount: number;
+  minMonths: number;
+  maxMonths: number;
+  rate: number;
+}

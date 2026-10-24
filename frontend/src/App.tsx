@@ -3,6 +3,7 @@ import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } fro
 import { Typography } from '@alfalab/core-components/typography';
 import Layout from './components/Layout';
 import { AppProvider, useApp } from './context/AppContext';
+import Credits from './pages/Credits';
 import Home from './pages/Home';
 import Login from './pages/Login';
 
@@ -10,10 +11,10 @@ import Login from './pages/Login';
 function ProtectedRoute({ children }: { children?: ReactElement }) {
   const { isAuthenticated } = useApp();
   const location = useLocation();
-  // ВРЕМЕННО ОТКЛЮЧЕНО ДЛЯ ПРОСМОТРА ДИЗАЙНА
-  // if (!isAuthenticated) {
-  //   return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  // }
+// ЗАГЛУШКА ЧТОБЫ МОЖНО БЫЛО ВОЙТИ
+// if (!isAuthenticated) {
+//   return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+// }
   return children ?? <Outlet />;
 }
 
@@ -44,7 +45,7 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
-              <Route path="credits" element={<ComingSoon title="Кредиты" />} />
+              <Route path="credits" element={<Credits />} />
               <Route path="product" element={<ComingSoon title="Страница кредита" />} />
               <Route path="wizard" element={<ComingSoon title="Заявка на кредит" />} />
               <Route path="documents" element={<ComingSoon title="Документы" />} />
