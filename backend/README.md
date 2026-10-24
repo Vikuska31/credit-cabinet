@@ -1,6 +1,6 @@
 # backend — ядро (Федя)
 
-Java 21+, пока **без Spring**: вся бизнес-логика написана на чистой Java, Spring-слой (REST, JPA, конфигурация) добавляется следующим этапом.
+Java 21, Spring Boot 4.1.2, Maven. Бизнес-логика на чистой Java (без зависимости от Spring), поверх неё пакеты `config` (сборка бинов) и `web` (REST).
 
 ## Что внутри (`src/main/java/ru/creditcabinet/backend`)
 
@@ -15,15 +15,16 @@ Java 21+, пока **без Spring**: вся бизнес-логика напи�
 | `bank`, `application.DocumentCatalog` | Интерфейсы к мокам Вики и documents-service |
 | `demo` | **Временные** демоданные в коде (зеркало `data/demo-profiles/profiles.json`) |
 
-## Проверка без Maven
+## Запуск и проверка
 
 ```bash
 cd backend
-javac --release 21 -d /tmp/cc-out $(find src -name '*.java')
-java -cp /tmp/cc-out ru.creditcabinet.backend.ScenarioCheck
+./mvnw spring-boot:run   # сервер на http://localhost:8080
+./mvnw test              # сценарии ядра + сквозной HTTP-сценарий
 ```
 
-`ScenarioCheck` проходит все три демопрофиля, уточнение, встречное предложение, сбой источника и права доступа.
+REST-описание: `docs/api.md`. Хранилище пока в памяти (БД подключим отдельным шагом), поэтому после перезапуска заявки пропадают.
+Тестовые входы: `demo.ip`, `demo.ooo`, `demo.risk` (пароль `demo1234`) и кнопки демопрофилей; сотрудник `employee` / `employee1234` через `/api/auth/staff/login`.
 
 ## Допущения, которые нужно утвердить
 

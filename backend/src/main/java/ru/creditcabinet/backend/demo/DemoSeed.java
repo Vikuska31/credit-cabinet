@@ -79,6 +79,16 @@ public class DemoSeed implements CompanyDirectory, BankDataSource, DocumentCatal
                         rub(m1 + m2 + m3)));
     }
 
+    public record DemoProfile(String id, String title, String login, String companyName) {}
+
+    /** Кнопки входа: «ИП новичок / ООО с историей / Риск просрочки». */
+    public List<DemoProfile> demoProfiles() {
+        return List.of(
+                new DemoProfile("ip-novichok", "ИП новичок", "demo.ip", companies.get(IP_INN).name()),
+                new DemoProfile("ooo-istoriya", "ООО с историей", "demo.ooo", companies.get(OOO_INN).name()),
+                new DemoProfile("risk-prosrochki", "Риск просрочки", "demo.risk", companies.get(RISK_INN).name()));
+    }
+
     public void registerAccounts(AuthService auth) {
         auth.register(new UserAccount("demo.ip", "Смирнов Алексей Петрович", Role.CLIENT, IP_INN, PasswordHasher.hash("demo1234")));
         auth.register(new UserAccount("demo.ooo", "Петрова Мария Сергеевна", Role.CLIENT, OOO_INN, PasswordHasher.hash("demo1234")));

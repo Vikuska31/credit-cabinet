@@ -19,14 +19,14 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Самопроверка ядра без внешних библиотек (JUnit подключим вместе со Spring).
- * Запуск: см. backend/README.md. При первой ошибке завершается с кодом 1.
+ * Сценарная проверка ядра без Spring. Запускается из {@link CoreScenarioTest} и отдельно через main.
+ * При первой ошибке бросает AssertionError.
  */
 public class ScenarioCheck {
     static int passed;
 
     static void check(boolean cond, String name) {
-        if (!cond) { System.err.println("ПРОВАЛ: " + name); System.exit(1); }
+        if (!cond) throw new AssertionError("ПРОВАЛ: " + name);
         passed++;
         System.out.println("ok   " + name);
     }
