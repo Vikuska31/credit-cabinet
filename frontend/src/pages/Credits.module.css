@@ -1,0 +1,183 @@
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.card {
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(23, 27, 38, 0.07);
+}
+
+.card h2 {
+  margin: 0 0 16px;
+}
+
+.purposes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.purpose {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 112px;
+  padding: 17px;
+  text-align: left;
+  font: inherit;
+  color: #16181d;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+.purpose:hover {
+  border-color: #b3b8c2;
+}
+.purpose:focus-visible {
+  outline: 3px solid #0055ff88;
+  outline-offset: 2px;
+}
+.purposeSelected,
+.purposeSelected:hover {
+  padding: 16px;
+  border: 2px solid #ef3124;
+  background: #fffafa;
+}
+
+.purposeIcon {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  background: #fff0ef;
+  color: #ef3124;
+  font-size: 20px;
+}
+.purposeName {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.hint {
+  margin: 16px 0 0;
+}
+
+.params {
+  display: grid;
+  gap: 20px;
+}
+
+.result {
+  display: grid;
+  gap: 4px;
+  padding: 16px;
+  border-radius: 14px;
+  background: #f6f7f9;
+}
+.resultMain {
+  padding-bottom: 12px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid #e8e9ec;
+}
+.resultMainValue {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+.resultRow {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+.resultRow b {
+  font-weight: 700;
+}
+
+.sectionTitle {
+  margin: 32px 0 16px;
+}
+
+/* Сетка карточек: строго 2 колонки */
+.products {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Карточка продукта */
+.product {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0; /* Защита от наезда на меню */
+}
+
+/* Красная рамка для рекомендованного */
+.productRecommended {
+  border: 2px solid #ef3124;
+  padding: 23px;
+}
+
+.product h3 {
+  margin: 0;
+}
+
+.productLimit {
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.conditions {
+  width: 100%;
+  margin: 0;
+  padding: 14px 0 0;
+  display: grid;
+  gap: 6px;
+  border-top: 1px solid #e8e9ec;
+}
+
+.layout > *,
+.products > * {
+  min-width: 0;
+}
+
+.conditions div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap; /* длинные значения переносятся, а не выталкивают карточку */
+}
+
+.conditions dt {
+  color: #6b7280;
+}
+
+.conditions dd {
+  margin: 0;
+  font-weight: 600;
+  text-align: right;
+}
+
+/* Кнопка прижата к низу и растянута на всю ширину */
+.productAction {
+  margin-top: auto;
+  width: 100%;
+}
+
+.warn {
+  color: #c72720;
+}

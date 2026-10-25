@@ -1,0 +1,179 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.demoNote {
+  margin-bottom: 16px;
+  padding: 12px 14px;
+  border-left: 3px solid #f0a400;
+  border-radius: 6px;
+  background: #fff8e9;
+  color: #745018;
+}
+
+.list {
+  display: grid;
+  gap: 12px;
+}
+
+.card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 20px;
+  padding: 20px 24px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  box-shadow: 0 16px 40px rgba(23, 27, 38, 0.07);
+}
+.card > * {
+  min-width: 0;
+}
+.cardMain {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+}
+.cardTitle {
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.fact dt {
+  font-size: 12px;
+  color: #6b7280;
+}
+.fact dd {
+  margin: 2px 0 0;
+  font-weight: 700;
+}
+.facts {
+  margin: 0;
+}
+
+/* ---------- Пустое состояние ---------- */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 64px 24px;
+  text-align: center;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px dashed #d4d7de;
+}
+.emptyIcon {
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: #fff0ef;
+  color: #ef3124;
+  font-size: 32px;
+}
+.emptyText {
+  max-width: 420px;
+}
+.loader {
+  display: grid;
+  place-items: center;
+  padding: 64px 0;
+}
+
+/* ---------- Детали ---------- */
+.detailHead {
+  display: grid;
+  gap: 8px;
+  justify-items: start;
+  margin-bottom: 20px;
+}
+.detailFacts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0 0 24px;
+}
+.detailFacts > div {
+  padding: 14px;
+  border-radius: 12px;
+  background: #f6f7f9;
+}
+.detailFacts dt {
+  font-size: 12px;
+  color: #6b7280;
+}
+.detailFacts dd {
+  margin: 2px 0 0;
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.stepper {
+  margin: 0 0 24px;
+  padding: 0;
+  list-style: none;
+}
+.stage {
+  position: relative;
+  display: flex;
+  gap: 14px;
+  padding-bottom: 18px;
+}
+.stage:last-child {
+  padding-bottom: 0;
+}
+.stage:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 26px;
+  bottom: 2px;
+  width: 2px;
+  background: #e1e4ea;
+}
+.stageDone:not(:last-child)::before {
+  background: #ef3124;
+}
+.stageDot {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #d2d6dc;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+}
+.stageDone .stageDot,
+.stageCurrent .stageDot {
+  background: #ef3124;
+}
+.stageCurrent .stageDot {
+  box-shadow: 0 0 0 4px #ffe1de;
+}
+.stageTitle {
+  font-weight: 700;
+}
+.stageTodo .stageTitle {
+  color: #8a909b;
+}
+
+.now {
+  padding: 16px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  background: #fff0ef;
+}
+
+.filter {
+  width: 480px;
+}
