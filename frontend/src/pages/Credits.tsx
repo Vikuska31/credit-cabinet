@@ -256,7 +256,7 @@ export default function Credits() {
                   key={product.id}
                   className={`${styles.card} ${styles.product} ${recommended ? styles.productRecommended : ''}`}
                 >
-                  <Tag view="filled" size={32} className={`tag ${equipment ? 'tag--purple' : 'tag--red'}`}>
+                  <Tag view="filled" size={32} className="tag tag--gray">
                     {equipment ? 'Для оборудования' : 'Для разных бизнес-целей'}
                   </Tag>
                   <Typography.Title tag="h3" view="small" weight="bold">

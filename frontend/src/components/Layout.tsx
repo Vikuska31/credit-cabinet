@@ -14,6 +14,7 @@ const NAV_ITEMS = [
 
 function UserMenu() {
   const { user, logout } = useApp();
+  const navigate = useNavigate(); // Добавили хук для навигации
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -68,6 +69,7 @@ function UserMenu() {
             onClick={() => {
               setOpen(false);
               logout();
+              navigate('/login', { replace: true }); // Принудительный выход на логин
             }}
           >
             Выйти
