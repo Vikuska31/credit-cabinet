@@ -18,13 +18,24 @@ public record ApplicationView(
         BigDecimal monthlyIncomeRub, BigDecimal monthlyExpensesRub, Set<String> attachedDocumentIds, boolean consent,
         LoanOffer submittedOffer, Instant submittedAt, Decision decision, LoanOffer finalOffer, Instant issuedAt,
         List<Decision.ClarificationRequest> openRequests, List<HistoryEvent> history,
-        BankData bankData) {
+        BankData bankData,
+        // Удобные поля для списка заявок на фронтенде
+        String product, Integer months, String purpose, Instant createdAt, Instant updatedAt) {
+
+    public static final String PRODUCT_NAME = "Кредит для бизнеса";
+
+    private static String purpose(LoanApplication a) {
+        return a.goals().stream().sorted().map(g -> g == LoanGoal.OTHER && a.otherGoalText() != null ? a.otherGoalText() : g.title())
+                .collect(java.util.stream.Collectors.joining(", "));
+    }
 
     static ApplicationView of(LoanApplication a, boolean forEmployee) {
         return new ApplicationView(a.id(), a.number(), a.companyInn(), a.status(), a.status().title(), a.step(),
                 a.goals(), a.otherGoalText(), a.otherGoalCategory(), a.amount(), a.termMonths(), a.selectedKind(),
                 a.monthlyIncomeRub(), a.monthlyExpensesRub(), Set.copyOf(a.attachedDocumentIds()), a.consent(),
                 a.submittedOffer(), a.submittedAt(), a.decision(), a.finalOffer(), a.issuedAt(),
-                a.openRequests(), a.history(), forEmployee ? a.bankDataSnapshot() : null);
+                a.openRequests(), a.history(), forEmployee ? a.bankDataSnapshot() : null,
+                PRODUCT_NAME, a.termMonths(), purpose(a), a.createdAt(),
+                a.history().isEmpty() ? a.createdAt() : a.history().get(a.history().size() - 1).at());
     }
 }
