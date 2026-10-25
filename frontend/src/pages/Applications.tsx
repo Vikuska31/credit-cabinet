@@ -22,7 +22,7 @@ const MOCK_APPLICATIONS: Application[] = [
     purpose: 'Оборудование',
     amount: 1_500_000,
     months: 24,
-    status: 'needs-info',
+    status: 'NEEDS_CLARIFICATION',
     createdAt: '2026-10-21T10:15:00',
   },
   {
@@ -31,7 +31,7 @@ const MOCK_APPLICATIONS: Application[] = [
     purpose: 'Развитие',
     amount: 750_000,
     months: 12,
-    status: 'approved',
+    status: 'APPROVED',
     createdAt: '2026-10-12T14:40:00',
   },
   {
@@ -40,7 +40,7 @@ const MOCK_APPLICATIONS: Application[] = [
     purpose: 'Реклама',
     amount: 300_000,
     months: 6,
-    status: 'rejected',
+    status: 'REJECTED',
     createdAt: '2026-09-28T09:05:00',
   },
 ];
@@ -48,17 +48,15 @@ const MOCK_APPLICATIONS: Application[] = [
 type Filter = 'all' | 'active' | 'done';
 
 const NOW_TEXT: Record<ApplicationStatus, string> = {
-  draft: 'Заявка ещё не отправлена. Продолжите оформление с того же шага.',
-  processing: 'Заявка отправлена. Банк проверяет данные.',
-  review: 'Проверяются сведения и документы.',
-  'needs-info': 'Нужны дополнительные сведения или новый документ.',
-  counter: 'Банк предложил другие условия. Сравните их с вашим запросом.',
-  approved: 'Предложение готово. Проверьте условия и подтвердите.',
-  rejected: 'Банк отказал по этой заявке. Можно посмотреть другие варианты.',
-  declined: 'Вы отказались от предложенных условий. Можно выбрать другой кредит.',
-  accepted: 'Условия подтверждены. Осталось завершить подписание.',
-  signed: 'Подтверждение получено. Готовим выдачу.',
-  issued: 'Оформление завершено.',
+  DRAFT: 'Заявка ещё не отправлена. Продолжите оформление с того же шага.',
+  UNDER_REVIEW: 'Заявка отправлена. Банк проверяет данные.',
+  NEEDS_CLARIFICATION: 'Нужны дополнительные сведения или новый документ.',
+  CHECK_FAILED: 'Проверка не удалась. Обратитесь в поддержку.',
+  APPROVED: 'Предложение готово. Проверьте условия и подтвердите.',
+  COUNTER_OFFERED: 'Банк предложил другие условия. Сравните их с вашим запросом.',
+  REJECTED: 'Банк отказал по этой заявке. Можно посмотреть другие варианты.',
+  DECLINED_BY_CLIENT: 'Вы отказались от предложенных условий.',
+  ISSUED: 'Оформление завершено.',
 };
 
 const STAGES = ['Заявка отправлена', 'Проверка', 'Решение или уточнение', 'Принятие и выдача'] as const;
@@ -67,22 +65,21 @@ type StageState = 'done' | 'current' | 'todo';
 /** Состояние каждого из четырёх этапов для данного статуса. */
 function getStages(status: ApplicationStatus): StageState[] {
   switch (status) {
-    case 'draft':
+    case 'DRAFT':
       return ['todo', 'todo', 'todo', 'todo'];
-    case 'processing':
-    case 'review':
+    case 'UNDER_REVIEW':
       return ['done', 'current', 'todo', 'todo'];
-    case 'needs-info':
-    case 'counter':
-    case 'approved':
-    case 'rejected':
-    case 'declined':
+    case 'NEEDS_CLARIFICATION':
+    case 'CHECK_FAILED':
+    case 'COUNTER_OFFERED':
+    case 'APPROVED':
+    case 'REJECTED':
+    case 'DECLINED_BY_CLIENT':
       return ['done', 'done', 'current', 'todo'];
-    case 'accepted':
-    case 'signed':
-      return ['done', 'done', 'done', 'current'];
-    case 'issued':
+    case 'ISSUED':
       return ['done', 'done', 'done', 'done'];
+    default:
+      return ['todo', 'todo', 'todo', 'todo']; // Для избежания ошибки TS2366
   }
 }
 
@@ -168,12 +165,12 @@ function ApplicationDetails({ app, onClose }: { app: Application; onClose: () =>
         <Button view="accent" size={48} href={`tel:${BANK_PHONE}`}>
           Связаться с банком
         </Button>
-        {app.status === 'draft' && (
+        {app.status === 'DRAFT' && (
           <Button view="outlined" size={48} onClick={() => navigate('/wizard')}>
             Продолжить заявку
           </Button>
         )}
-        {(app.status === 'rejected' || app.status === 'declined') && (
+        {(app.status === 'REJECTED' || app.status === 'DECLINED_BY_CLIENT') && (
           <Button view="outlined" size={48} onClick={() => navigate('/credits')}>
             Подобрать другой кредит
           </Button>

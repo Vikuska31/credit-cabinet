@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState, useEffect, type FormEvent } from 'react';
 import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@alfalab/core-components/button';
 import { CardImage } from '@alfalab/core-components/card-image';
@@ -7,13 +7,21 @@ import { Notification } from '@alfalab/core-components/notification';
 import { Tag } from '@alfalab/core-components/tag';
 import { Typography } from '@alfalab/core-components/typography';
 import { ApiError } from '../api/client';
+import { demoLogin, getDemoProfiles } from '../api/auth';
 import { useApp } from '../context/AppContext';
+import type { DemoProfile } from '../types';
 
 const WRONG_CREDENTIALS = 'Неверный логин или пароль. Попробуйте ещё раз';
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+// Запасные профили (если бэкенд недоступен)
+const FALLBACK_PROFILES: DemoProfile[] = [
+  { id: 'ip-novichok', title: 'ИП-новичок', login: '', companyName: '' },
+  { id: 'ooo-istoriya', title: 'ООО с историей', login: '', companyName: '' },
+  { id: 'risk-prosrochki', title: 'Риск: просрочка', login: '', companyName: '' },
+];
 
 export default function Login() {
-  const { isAuthenticated, login } = useApp();
+  const { isAuthenticated, login: contextLogin } = useApp();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: string } | null)?.from ?? '/';
@@ -24,7 +32,26 @@ export default function Login() {
   const [formError, setFormError] = useState('');
   const [serverError, setServerError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [demoLoading, setDemoLoading] = useState<string | null>(null);
   const [cardLoaded, setCardLoaded] = useState(false);
+
+  // Состояние для демо-профилей
+  const [profiles, setProfiles] = useState<DemoProfile[]>(FALLBACK_PROFILES);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+
+  // Загружаем профили с бэкенда
+  useEffect(() => {
+    getDemoProfiles()
+      .then((list) => {
+        if (list && list.length > 0) {
+          setProfiles(list);
+        }
+      })
+      .catch(() => {
+        // Если бэкенд упал, оставляем FALLBACK_PROFILES
+      })
+      .finally(() => setLoadingProfiles(false));
+  }, []);
 
   if (isAuthenticated) return <Navigate to={from} replace />;
 
@@ -34,8 +61,8 @@ export default function Login() {
     setServerError('');
 
     const trimmed = email.trim();
-    if (!EMAIL_RE.test(trimmed)) {
-      setEmailError('Введите email в формате name@example.ru');
+    if (!trimmed) {
+      setEmailError('Введите логин');
       return;
     }
     if (!password) {
@@ -46,12 +73,12 @@ export default function Login() {
 
     setSubmitting(true);
     try {
-      await login(trimmed, password);
+      await contextLogin(trimmed, password);
       navigate(from, { replace: true });
     } catch (err) {
       if (err instanceof ApiError && [400, 401, 403].includes(err.status)) {
         setFormError(WRONG_CREDENTIALS);
-        setPassword(''); // пароль не храним и не показываем повторно
+        setPassword(''); 
       } else {
         setServerError(
           err instanceof Error ? err.message : 'Что-то пошло не так. Попробуйте позже.',
@@ -62,11 +89,29 @@ export default function Login() {
     }
   };
 
-  const fillDemo = (demoEmail: string) => {
-    setEmail(demoEmail);
-    setPassword('demo');
-    setEmailError('');
-    setFormError('');
+  const handleDemoLogin = async (profileId: string) => {
+    setDemoLoading(profileId);
+    setServerError('');
+    try {
+      const data = await demoLogin(profileId);
+      // Сохраняем токен и данные пользователя
+      localStorage.setItem('credit-cabinet:token', data.token);
+      
+      const userProfile = {
+        id: '1', // Заглушка, если бэкенд не вернул
+        firstName: data.fullName?.split(' ')[1] || '',
+        fullName: data.fullName || '',
+        companyName: '', // Если Федя пришлет, можно добавить
+        inn: data.companyInn || '',
+      };
+      
+      localStorage.setItem('credit-cabinet:user', JSON.stringify(userProfile));
+      window.location.href = from;
+    } catch (err) {
+      setServerError('Не удалось войти в демо-режим. Проверьте, запущен ли бэкенд.');
+    } finally {
+      setDemoLoading(null);
+    }
   };
 
   return (
@@ -95,7 +140,6 @@ export default function Login() {
             Онлайн
           </Tag>
         </div>
-        {/* Картинка карты грузится с CDN; пока её нет — блок скрыт, вёрстка не страдает */}
         <div className="login__card-art" hidden={!cardLoaded}>
           <CardImage
             cardId="ER"
@@ -118,8 +162,8 @@ export default function Login() {
           </Typography.Text>
 
           <Input
-            label="Email"
-            type="email"
+            label="Логин"
+            type="text"
             name="email"
             autoComplete="username"
             block
@@ -146,36 +190,26 @@ export default function Login() {
 
           <div style={{ marginTop: '16px', borderTop: '1px solid #e8e9ec', paddingTop: '16px' }}>
             <Typography.Text view="secondary-small" color="secondary" tag="div" style={{ marginBottom: '12px' }}>
-              Попробуйте демо-аккаунты:
+              Или войдите через демо-профиль:
             </Typography.Text>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <Button 
-                type="button" 
-                view="secondary" 
-                size={48} 
-                block
-                onClick={() => fillDemo('novice@example.ru')}
-              >
-                ИП-новичок
-              </Button>
-              <Button 
-                type="button" 
-                view="secondary" 
-                size={48} 
-                block
-                onClick={() => fillDemo('history@example.ru')}
-              >
-                ООО с историей
-              </Button>
-              <Button 
-                type="button" 
-                view="secondary" 
-                size={48} 
-                block
-                onClick={() => fillDemo('risk@example.ru')}
-              >
-                Риск: просрочка
-              </Button>
+              {loadingProfiles ? (
+                <div style={{ textAlign: 'center', padding: '10px' }}>Загрузка профилей...</div>
+              ) : (
+                profiles.map((profile) => (
+                  <Button 
+                    key={profile.id}
+                    type="button" 
+                    view="secondary" 
+                    size={48} 
+                    block
+                    loading={demoLoading === profile.id}
+                    onClick={() => handleDemoLogin(profile.id)}
+                  >
+                    {profile.title}
+                  </Button>
+                ))
+              )}
             </div>
           </div>
         </form>
@@ -183,7 +217,7 @@ export default function Login() {
 
       <Notification
         badge="negative-alert"
-        title="Нет связи с сервером"
+        title="Ошибка"
         visible={Boolean(serverError)}
         autoCloseDelay={6000}
         offset={88}

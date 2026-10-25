@@ -1,15 +1,13 @@
 export type ApplicationStatus =
-  | 'draft'
-  | 'processing'
-  | 'review'
-  | 'needs-info'
-  | 'counter'
-  | 'approved'
-  | 'rejected'
-  | 'declined'
-  | 'accepted'
-  | 'signed'
-  | 'issued';
+  | 'DRAFT'
+  | 'UNDER_REVIEW'
+  | 'NEEDS_CLARIFICATION'
+  | 'CHECK_FAILED'
+  | 'APPROVED'
+  | 'COUNTER_OFFERED'
+  | 'REJECTED'
+  | 'DECLINED_BY_CLIENT'
+  | 'ISSUED';
 
 export interface UserProfile {
   id: string;
@@ -25,28 +23,27 @@ export interface Application {
   amount: number;
   months: number;
   status: ApplicationStatus;
+  purpose?: string;
   createdAt?: string;
   updatedAt?: string;
 }
 
 export const APPLICATION_STATUS_LABELS: Record<ApplicationStatus, string> = {
-  draft: 'Черновик',
-  processing: 'На рассмотрении',
-  review: 'На проверке',
-  'needs-info': 'Нужны сведения',
-  counter: 'Другие условия',
-  approved: 'Одобрено',
-  rejected: 'Отказ',
-  declined: 'Отклонено клиентом',
-  accepted: 'Условия приняты',
-  signed: 'Подписано',
-  issued: 'Выдано',
+  DRAFT: 'Черновик',
+  UNDER_REVIEW: 'На рассмотрении',
+  NEEDS_CLARIFICATION: 'Нужны уточнения',
+  CHECK_FAILED: 'Ошибка проверки',
+  APPROVED: 'Одобрено',
+  COUNTER_OFFERED: 'Встречное предложение',
+  REJECTED: 'Отказ',
+  DECLINED_BY_CLIENT: 'Отклонено клиентом',
+  ISSUED: 'Выдано',
 };
 
 export const FINAL_APPLICATION_STATUSES: ApplicationStatus[] = [
-  'rejected',
-  'declined',
-  'issued',
+  'REJECTED',
+  'DECLINED_BY_CLIENT',
+  'ISSUED',
 ];
 
 export interface Product {
@@ -58,4 +55,19 @@ export interface Product {
   minMonths: number;
   maxMonths: number;
   rate: number;
+}
+
+export interface DemoProfile {
+  id: string;
+  title: string;
+  login: string;
+  companyName: string;
+}
+
+export interface LoginResponse {
+  token: string;
+  role?: string;
+  fullName?: string;
+  companyInn?: string;
+  user?: UserProfile;
 }

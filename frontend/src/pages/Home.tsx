@@ -17,29 +17,23 @@ import { formatMonths, formatRub } from '../utils/format';
 type Tone = 'red' | 'green' | 'purple' | 'blue' | 'gray';
 
 const STATUS_TONE: Record<ApplicationStatus, Tone> = {
-  draft: 'purple',
-  processing: 'blue',
-  review: 'blue',
-  'needs-info': 'red',
-  counter: 'red',
-  approved: 'green',
-  rejected: 'gray',
-  declined: 'gray',
-  accepted: 'green',
-  signed: 'green',
-  issued: 'green',
+  DRAFT: 'purple',
+  UNDER_REVIEW: 'blue',
+  NEEDS_CLARIFICATION: 'red',
+  CHECK_FAILED: 'red',
+  APPROVED: 'green',
+  COUNTER_OFFERED: 'red',
+  REJECTED: 'gray',
+  DECLINED_BY_CLIENT: 'gray',
+  ISSUED: 'green',
 };
 
-/** Чем меньше число, тем раньше показываем: ждёт банк → готовое предложение → черновик. */
 const PRIORITY: Partial<Record<ApplicationStatus, number>> = {
-  'needs-info': 0,
-  counter: 0,
-  approved: 1,
-  accepted: 1,
-  signed: 1,
-  draft: 2,
-  review: 3,
-  processing: 3,
+  NEEDS_CLARIFICATION: 0,
+  COUNTER_OFFERED: 0,
+  APPROVED: 1,
+  DRAFT: 2,
+  UNDER_REVIEW: 3,
 };
 
 interface NextStep {
@@ -66,32 +60,25 @@ function getNextStep(app: Application | null): NextStep {
     };
   }
   switch (app.status) {
-    case 'needs-info':
+    case 'NEEDS_CLARIFICATION':
       return {
         text: 'Для рассмотрения заявки банку нужны дополнительные сведения.',
         cta: 'Добавить сведения',
         to: '/applications',
       };
-    case 'counter':
+    case 'COUNTER_OFFERED':
       return {
         text: 'Банк предложил другие условия. Сравните их с вашим запросом.',
         cta: 'Посмотреть предложение',
         to: '/applications',
       };
-    case 'approved':
+    case 'APPROVED':
       return {
         text: 'Предложение готово. Проверьте условия и подтвердите.',
         cta: 'Открыть предложение',
         to: '/applications',
       };
-    case 'accepted':
-    case 'signed':
-      return {
-        text: 'Условия приняты. Осталось завершить оформление.',
-        cta: 'Продолжить оформление',
-        to: '/applications',
-      };
-    case 'draft':
+    case 'DRAFT':
       return {
         text: 'Продолжите заявку с того же шага, где остановились.',
         cta: 'Продолжить заявку',

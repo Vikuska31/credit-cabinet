@@ -115,10 +115,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (email: string, password: string) => {
-    const { token, user } = await loginRequest(email, password);
-    setToken(token);
-    writeStoredUser(user);
-    dispatch({ type: 'LOGIN_SUCCESS', user });
+    const data = await loginRequest(email, password);
+    setToken(data.token);
+    
+    // Формируем профиль из того, что вернул бэкенд
+    const userProfile: UserProfile = {
+      id: '1',
+      fullName: data.fullName || email,
+      firstName: data.fullName?.split(' ')[1],
+      inn: data.companyInn || '',
+      companyName: '',
+    };
+    
+    writeStoredUser(userProfile);
+    dispatch({ type: 'LOGIN_SUCCESS', user: userProfile });
   }, []);
 
   const refreshApplications = useCallback(async () => {

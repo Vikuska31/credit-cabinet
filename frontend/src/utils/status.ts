@@ -2,19 +2,16 @@ import { FINAL_APPLICATION_STATUSES, type ApplicationStatus } from '../types';
 
 export type StatusTone = 'red' | 'green' | 'purple' | 'blue' | 'gray';
 
-/** Цвет тега для каждого статуса заявки. */
 export const STATUS_TONE: Record<ApplicationStatus, StatusTone> = {
-  draft: 'purple',
-  processing: 'blue',
-  review: 'blue',
-  'needs-info': 'purple',
-  counter: 'purple',
-  approved: 'green',
-  rejected: 'red',
-  declined: 'gray',
-  accepted: 'green',
-  signed: 'green',
-  issued: 'green',
+  DRAFT: 'purple',
+  UNDER_REVIEW: 'blue',
+  NEEDS_CLARIFICATION: 'red',
+  CHECK_FAILED: 'red',
+  APPROVED: 'green',
+  COUNTER_OFFERED: 'red',
+  REJECTED: 'gray',
+  DECLINED_BY_CLIENT: 'gray',
+  ISSUED: 'green',
 };
 
 export const isFinalStatus = (status: ApplicationStatus): boolean =>
