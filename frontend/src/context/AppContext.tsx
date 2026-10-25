@@ -4,166 +4,167 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useReducer,
+  useState,
   type ReactNode,
 } from 'react';
+import * as auth from '../api/auth';
 import { getApplications } from '../api/applications';
-import { login as loginRequest } from '../api/auth';
 import { ApiError, getToken, setToken } from '../api/client';
 import type { Application, UserProfile } from '../types';
-
-type LoadStatus = 'idle' | 'loading' | 'success' | 'error';
-
-interface AppState {
+interface Value {
   user: UserProfile | null;
   isAuthenticated: boolean;
+  checkingSession: boolean;
   applications: Application[];
-  applicationsStatus: LoadStatus;
-  /** Текст ошибки загрузки заявок (например, бэкенд недоступен). */
+  applicationsStatus: 'idle' | 'loading' | 'success' | 'error';
   applicationsError: string | null;
-}
-
-type Action =
-  | { type: 'LOGIN_SUCCESS'; user: UserProfile }
-  | { type: 'LOGOUT' }
-  | { type: 'APPLICATIONS_REQUEST' }
-  | { type: 'APPLICATIONS_SUCCESS'; applications: Application[] }
-  | { type: 'APPLICATIONS_FAILURE'; error: string };
-
-const USER_KEY = 'credit-cabinet:user';
-
-function readStoredUser(): UserProfile | null {
-  try {
-    const raw = localStorage.getItem(USER_KEY);
-    return raw ? (JSON.parse(raw) as UserProfile) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredUser(user: UserProfile | null): void {
-  try {
-    if (user) localStorage.setItem(USER_KEY, JSON.stringify(user));
-    else localStorage.removeItem(USER_KEY);
-  } catch {
-    /* хранилище недоступно */
-  }
-}
-
-function createInitialState(): AppState {
-  // Сессию восстанавливаем, только если есть и токен, и профиль.
-  const user = getToken() ? readStoredUser() : null;
-  return {
-    user,
-    isAuthenticated: Boolean(user),
-    applications: [],
-    applicationsStatus: 'idle',
-    applicationsError: null,
-  };
-}
-
-function reducer(state: AppState, action: Action): AppState {
-  switch (action.type) {
-    case 'LOGIN_SUCCESS':
-      return { ...state, user: action.user, isAuthenticated: true };
-    case 'LOGOUT':
-      return {
-        user: null,
-        isAuthenticated: false,
-        applications: [],
-        applicationsStatus: 'idle',
-        applicationsError: null,
-      };
-    case 'APPLICATIONS_REQUEST':
-      return { ...state, applicationsStatus: 'loading', applicationsError: null };
-    case 'APPLICATIONS_SUCCESS':
-      return {
-        ...state,
-        applications: action.applications,
-        applicationsStatus: 'success',
-        applicationsError: null,
-      };
-    case 'APPLICATIONS_FAILURE':
-      // Список очищаем: интерфейс покажет пустое состояние вместо падения.
-      return {
-        ...state,
-        applications: [],
-        applicationsStatus: 'error',
-        applicationsError: action.error,
-      };
-    default:
-      return state;
-  }
-}
-
-interface AppContextValue extends AppState {
-  /** Бросает ApiError при неудаче — форма входа сама решает, что показать. */
-  login: (email: string, password: string) => Promise<void>;
+  login: (login: string, password: string) => Promise<void>;
+  staffLogin: (login: string, password: string) => Promise<void>;
+  demoLogin: (id: string) => Promise<void>;
   logout: () => void;
   refreshApplications: () => Promise<void>;
 }
-
-const AppContext = createContext<AppContextValue | null>(null);
-
+const AppContext = createContext<Value | null>(null);
 export function AppProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(reducer, undefined, createInitialState);
-
-  const logout = useCallback(() => {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [checkingSession, setChecking] = useState(true);
+  const [applications, setApplications] = useState<Application[]>([]);
+  const [applicationsStatus, setStatus] = useState<Value['applicationsStatus']>('idle');
+  const [applicationsError, setError] = useState<string | null>(null);
+  const clear = useCallback(() => {
     setToken(null);
-    writeStoredUser(null);
-    dispatch({ type: 'LOGOUT' });
+    setUser(null);
+    setApplications([]);
+    setStatus('idle');
+    localStorage.removeItem('credit-cabinet:user');
   }, []);
-
-  const login = useCallback(async (email: string, password: string) => {
-    const data = await loginRequest(email, password);
-    setToken(data.token);
-    
-    // Формируем профиль из того, что вернул бэкенд
-    const userProfile: UserProfile = {
-      id: '1',
-      fullName: data.fullName || email,
-      firstName: data.fullName?.split(' ')[1],
-      inn: data.companyInn || '',
-      companyName: '',
-    };
-    
-    writeStoredUser(userProfile);
-    dispatch({ type: 'LOGIN_SUCCESS', user: userProfile });
-  }, []);
-
-  const refreshApplications = useCallback(async () => {
-    dispatch({ type: 'APPLICATIONS_REQUEST' });
-    try {
-      const applications = await getApplications();
-      dispatch({ type: 'APPLICATIONS_SUCCESS', applications });
-    } catch (e) {
-      if (e instanceof ApiError && e.status === 401) {
-        logout(); // токен просрочен
-        return;
-      }
-      dispatch({
-        type: 'APPLICATIONS_FAILURE',
-        error: e instanceof Error ? e.message : 'Не удалось загрузить заявки.',
+  const loadProfile = useCallback(async () => {
+    const me = await auth.getMe();
+    if (me.role === 'EMPLOYEE') {
+      setUser({
+        id: me.login,
+        role: 'EMPLOYEE',
+        fullName: me.fullName,
+        companyName: 'Банк',
+        inn: '',
       });
+      return;
     }
-  }, [logout]);
-
-  // Заявки подгружаем сразу после входа / восстановления сессии.
+    if (me.role !== 'CLIENT') throw new Error('Неизвестная роль');
+    const p = await auth.getProfile();
+    setUser({
+      id: me.login,
+      role: 'CLIENT',
+      fullName: me.fullName,
+      firstName: me.fullName.split(/\s+/)[1],
+      companyName: p.company.name,
+      inn: p.company.inn,
+    });
+  }, []);
   useEffect(() => {
-    if (state.isAuthenticated) void refreshApplications();
-  }, [state.isAuthenticated, refreshApplications]);
-
-  const value = useMemo<AppContextValue>(
-    () => ({ ...state, login, logout, refreshApplications }),
-    [state, login, logout, refreshApplications],
+    let active = true;
+    const restore = async () => {
+      try {
+        if (getToken()) await loadProfile();
+      } catch {
+        if (active) clear();
+      } finally {
+        if (active) setChecking(false);
+      }
+    };
+    void restore();
+    window.addEventListener('session-expired', clear);
+    return () => {
+      active = false;
+      window.removeEventListener('session-expired', clear);
+    };
+  }, [clear, loadProfile]);
+  const signIn = useCallback(
+    async (request: Promise<{ token: string }>) => {
+      const r = await request;
+      setToken(r.token);
+      try {
+        await loadProfile();
+      } catch (e) {
+        clear();
+        throw e;
+      }
+    },
+    [clear, loadProfile],
   );
-
+  const login = useCallback((v: string, p: string) => signIn(auth.login(v, p)), [signIn]);
+  const demoLogin = useCallback((id: string) => signIn(auth.demoLogin(id)), [signIn]);
+  const staffLogin = useCallback((v: string, p: string) => signIn(auth.staffLogin(v, p)), [signIn]);
+  const logout = useCallback(() => {
+    void auth
+      .endSession()
+      .catch(() => undefined)
+      .finally(clear);
+  }, [clear]);
+  const refreshApplications = useCallback(async () => {
+    setStatus('loading');
+    setError(null);
+    try {
+      setApplications(await getApplications());
+      setStatus('success');
+    } catch (e) {
+      if (e instanceof ApiError && e.status === 401) clear();
+      setStatus('error');
+      setError(e instanceof Error ? e.message : 'Ошибка загрузки');
+    }
+  }, [clear]);
+  useEffect(() => {
+    let active = true;
+    if (user)
+      getApplications()
+        .then((items) => {
+          if (active) {
+            setApplications(items);
+            setStatus('success');
+          }
+        })
+        .catch((e) => {
+          if (active) {
+            setStatus('error');
+            setError(e instanceof Error ? e.message : 'Ошибка загрузки');
+          }
+        });
+    return () => {
+      active = false;
+    };
+  }, [user]);
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated: !!user,
+      checkingSession,
+      applications,
+      applicationsStatus,
+      applicationsError,
+      login,
+      staffLogin,
+      demoLogin,
+      logout,
+      refreshApplications,
+    }),
+    [
+      user,
+      checkingSession,
+      applications,
+      applicationsStatus,
+      applicationsError,
+      login,
+      staffLogin,
+      demoLogin,
+      logout,
+      refreshApplications,
+    ],
+  );
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
 }
-
 // eslint-disable-next-line react-refresh/only-export-components
-export function useApp(): AppContextValue {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp нужно вызывать внутри <AppProvider>');
-  return ctx;
+export function useApp() {
+  const v = useContext(AppContext);
+  if (!v) throw new Error('AppProvider required');
+  return v;
 }

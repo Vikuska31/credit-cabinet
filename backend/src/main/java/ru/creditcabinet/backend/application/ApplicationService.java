@@ -101,6 +101,8 @@ public class ApplicationService {
         }
         if (!errors.isEmpty()) throw ApiException.validation(errors); // введённое клиентом не теряется: ничего не применено, фронт показывает ошибки рядом с полями
 
+        if (u.otherGoalText() != null && !java.util.Objects.equals(u.otherGoalText(), a.otherGoalText())) a.setOtherGoalCategory(null);
+        if (u.goals() != null && !u.goals().contains(ru.creditcabinet.backend.domain.LoanGoal.OTHER)) a.setOtherGoalCategory(null);
         if (u.goals() != null) a.setGoals(u.goals());
         if (u.otherGoalText() != null) a.setOtherGoalText(u.otherGoalText());
         if (u.otherGoalCategory() != null) a.setOtherGoalCategory(u.otherGoalCategory());

@@ -60,4 +60,11 @@
 `type`: `FINANCIAL_SUMMARY`, `TAX_DECLARATION`, `ACCOUNTING_REPORTS`, `TAX_DEBT_CERTIFICATE`, `PURCHASE_DOCUMENT`, `REPAIR_ESTIMATE`, `PREMISES_RIGHTS`. Для документов без периода `periodFrom`/`periodTo` = `null`. Загрузка, версии и скачивание файла идут напрямую из браузера в documents-service или через её прокси, backend нужен только список. Если сервис недоступен, библиотека считается пустой.
 
 ### Помощник с маскотом (Егор)
-Контракт не согласован. Предложение: `POST {AI_URL}/assistant` с `{text, context}` → `{intent, goals, amount, termMonths, clarifyingQuestion, buttons}`; backend проверяет поля, неизвестные действия отбрасывает, подстановка только после подтверждения клиентом.
+Реализованы `GET /api/ai/capabilities`, `POST /api/ai/goals/classify`, `POST /api/ai/assistant`.
+Внутренние маршруты: `POST {AI_URL}/v1/goals/classify`, `POST {AI_URL}/v1/assistant`, отдельная сервисная авторизация.
+Контракты, ограничения и деградация: [ai-integration.md](ai-integration.md). Схемы FastAPI: `ai-service /openapi.json`.
+
+### Файлы документов
+Загрузка и скачивание доступны через защищённые `POST /api/documents` и `GET /api/documents/{id}/file`.
+Внутренние маршруты `/companies/{inn}/documents` и `/companies/{inn}/documents/{id}/file` требуют `DOCUMENTS_SERVICE_TOKEN`.
+Пользовательский ИНН задаёт Java по текущему Principal; файлы и версии сохраняет documents-service.
