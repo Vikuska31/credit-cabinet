@@ -24,6 +24,15 @@ services:
     volumes:
       - ./data:/data:ro
 
+  # Сервис документов (Вика)
+  documents-service:
+    build: ./documents-service
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data:/data:ro
+
+  # Основной сервер (Федя)
   backend:
     build: ./backend
     env_file: .env
@@ -37,27 +46,30 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mocks:
+        condition: service_started
+      documents-service:
+        condition: service_started
     ports:
       - "8080:8080"
-  
-  documents-service:
-    build: ./documents-service
+
+  # Сайт (Лиза): nginx отдаёт страницы и передаёт /api основному серверу
+  frontend:
+    build: ./frontend
     ports:
-      - "8002:8002"
-    volumes:
-      - ./data:/data:ro
-  
+      - "3000:80"
+    depends_on:
+      backend:
+        condition: service_started
+
+  # Подключаем по мере готовности. Убрать "#" в начале строк,
+  # когда у сервиса появится Dockerfile.
   #
   # ai-service:
   #   build: ./ai-service
   #   env_file: .env
   #   ports:
   #     - "8003:8003"
-  #
-  # frontend:
-  #   build: ./frontend
-  #   ports:
-  #     - "3000:3000"
 
 # Именованные хранилища: объявляются здесь, на самом нижнем уровне
 volumes:
