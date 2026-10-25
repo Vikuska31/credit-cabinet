@@ -20,3 +20,5 @@ __pycache__/
 # веса моделей
 *.gguf
 *.safetensors
+# Maven wrapper jar скачивается сам
+.mvn/wrapper/maven-wrapper.jar
