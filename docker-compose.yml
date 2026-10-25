@@ -24,28 +24,29 @@ services:
     volumes:
       - ./data:/data:ro
 
-  # Подключаем по мере готовности. Убрать "#" в начале строк,
-  # когда у сервиса появится Dockerfile.
-  #
-  # backend:
-  #   build: ./backend
-  #   env_file: .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8080:8080"
-  #
-  # documents-service:
-  #   build: ./documents-service
-  #   env_file: .env
-  #   depends_on:
-  #     db:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8002:8002"
-  #   volumes:
-  #     - uploads:/app/uploads
+  backend:
+    build: ./backend
+    env_file: .env
+    environment:
+      DB_HOST: db
+      MOCKS_URL: http://mocks:8001
+      DOCUMENTS_URL: http://documents-service:8002
+      PROFILES_FILE: /data/demo-profiles/profiles.json
+    volumes:
+      - ./data:/data:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8080:8080"
+  
+  documents-service:
+    build: ./documents-service
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./data:/data:ro
+  
   #
   # ai-service:
   #   build: ./ai-service
