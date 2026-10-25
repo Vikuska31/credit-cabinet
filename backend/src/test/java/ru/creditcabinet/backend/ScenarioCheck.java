@@ -158,6 +158,28 @@ public class ScenarioCheck {
         ApplicationView s8b = apps.respondToClarification(ooo, d8.id(), Set.of("d8-tax", "d8-acc", "d8-cert"), null, null);
         check(s8b.status() != ApplicationStatus.NEEDS_CLARIFICATION && s8b.status() != ApplicationStatus.CHECK_FAILED, "с полным пакетом заявка доходит до решения: " + s8b.status());
 
+        // --- Сценарий Лены: одинаковая заявка 1 млн / 24 мес / «Товары и сырьё» для трёх профилей (docs/test-scenarios.md) ---
+        Principal ipB = auth.authenticate(auth.loginDemoProfile("demo.ip"));
+        for (Object[] c : new Object[][]{{ooo, "demo.ooo", ApplicationStatus.APPROVED}, {risk, "demo.risk", ApplicationStatus.REJECTED}}) {
+            Principal pr = (Principal) c[0];
+            ApplicationView b = apps.createDraft(pr);
+            apps.updateDraft(pr, b.id(), new DraftUpdate(Set.of(LoanGoal.GOODS), null, null, new BigDecimal("1000000"), 24,
+                    LoanOffer.Kind.REQUESTED, null, null, null, true, 4));
+            apps.attachSuggested(pr, b.id());
+            check(apps.submit(pr, b.id()).status() == c[2], "базовая заявка " + c[1] + " → " + c[2]);
+        }
+        ApplicationView bIp = apps.createDraft(ipB);
+        apps.updateDraft(ipB, bIp.id(), new DraftUpdate(Set.of(LoanGoal.GOODS), null, null, new BigDecimal("1000000"), 24,
+                LoanOffer.Kind.REQUESTED, null, null, Set.of(), true, 4));
+        check(apps.submit(ipB, bIp.id()).status() != ApplicationStatus.REJECTED, "базовая заявка demo.ip не отказ");
+
+        // --- С15: граница порога 3 млн ---
+        var today = java.time.LocalDate.of(2026, 10, 24);
+        var thr = Tariff.DEMO.fullPackageThreshold();
+        check(DocumentRequirements.forApplication(CompanyForm.OOO, Set.of(LoanGoal.GOODS), thr, thr, today).size() == 1, "ровно 3 000 000: базовый комплект");
+        check(DocumentRequirements.forApplication(CompanyForm.OOO, Set.of(LoanGoal.GOODS), thr.add(BigDecimal.ONE), thr, today).size() == 4, "3 000 001: расширенный пакет (ООО: сводка, декларация, отчётность, справка ФНС)");
+        check(DocumentRequirements.forApplication(CompanyForm.IP, Set.of(LoanGoal.GOODS), thr.add(BigDecimal.ONE), thr, today).size() == 3, "3 000 001 для ИП: без бухотчётности");
+
         // --- Доступ ---
         check(expectError(() -> apps.get(ip, d2.id())).status() == 404, "чужая заявка клиенту недоступна");
         check(expectError(() -> apps.get(emp, d5.id())).status() == 404, "сотрудник не видит чужие черновики");
