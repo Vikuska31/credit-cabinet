@@ -1,0 +1,1295 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Credit Cabinet public AI facade (Java)",
+    "version": "1.0.0",
+    "description": "Client role only. Actions require an explicit user click. See docs/ai-integration.md for semantic invariants."
+  },
+  "paths": {
+    "/api/ai/capabilities": {
+      "get": {
+        "security": [
+          {
+            "ClientSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated analysis or UNAVAILABLE; never mutates an application",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Capabilities"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/goals/classify": {
+      "post": {
+        "security": [
+          {
+            "ClientSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated analysis or UNAVAILABLE; never mutates an application",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GoalResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GoalRequest"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/ai/assistant": {
+      "post": {
+        "security": [
+          {
+            "ClientSession": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Validated analysis or UNAVAILABLE; never mutates an application",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AssistantResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Input or access error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiError"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PublicAssistantRequest"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "ClientSession": {
+        "type": "http",
+        "scheme": "bearer"
+      }
+    },
+    "schemas": {
+      "AssistantRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "context": {
+            "$ref": "#/components/schemas/Context"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMessage"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "History"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "context"
+        ],
+        "title": "AssistantRequest"
+      },
+      "AssistantResult": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1",
+            "title": "Schemaversion"
+          },
+          "businessUse": {
+            "type": "string",
+            "enum": [
+              "BUSINESS",
+              "PERSONAL",
+              "MIXED",
+              "UNCLEAR",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Businessuse"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "START_SELECTION",
+              "CONTINUE_DRAFT",
+              "OPEN_APPLICATION",
+              "SHOW_DOCUMENT",
+              "EXPLAIN_TERMS",
+              "UNKNOWN",
+              "OUT_OF_SCOPE"
+            ],
+            "title": "Intent"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "NEEDS_CLARIFICATION",
+              "NON_BUSINESS",
+              "UNSUPPORTED",
+              "UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "entities": {
+            "$ref": "#/components/schemas/Entities"
+          },
+          "questionCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SPECIFY_BUSINESS_USE",
+                  "SPECIFY_PURPOSE",
+                  "SPECIFY_AMOUNT",
+                  "SPECIFY_TERM",
+                  "SPECIFY_CURRENCY",
+                  "EXCLUDE_PERSONAL_PURPOSE",
+                  "SELECT_APPLICATION",
+                  "SELECT_DOCUMENT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questioncode"
+          },
+          "explanationTopic": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "RATE",
+                  "PAYMENT",
+                  "FEE",
+                  "DOCUMENTS",
+                  "PREVIEW"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Explanationtopic"
+          },
+          "targetRef": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Targetref"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/Evidence"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "title": "Evidence"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DISABLED",
+                  "DEPENDENCY_UNAVAILABLE",
+                  "TIMEOUT",
+                  "INVALID_RESPONSE",
+                  "OVERLOADED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "businessUse",
+          "intent",
+          "status",
+          "entities",
+          "questionCode",
+          "explanationTopic",
+          "targetRef",
+          "evidence",
+          "fallbackReason"
+        ],
+        "title": "AssistantResult"
+      },
+      "Candidate": {
+        "properties": {
+          "ref": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Ref"
+          },
+          "number": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Number"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 32
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Status"
+          },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 300
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "ref"
+        ],
+        "title": "Candidate"
+      },
+      "Clarification": {
+        "properties": {
+          "questionCode": {
+            "type": "string",
+            "enum": [
+              "SPECIFY_BUSINESS_USE",
+              "SPECIFY_PURPOSE",
+              "SPECIFY_AMOUNT",
+              "SPECIFY_TERM",
+              "SPECIFY_CURRENCY",
+              "EXCLUDE_PERSONAL_PURPOSE",
+              "SELECT_APPLICATION",
+              "SELECT_DOCUMENT"
+            ],
+            "title": "Questioncode"
+          },
+          "answer": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Answer"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "questionCode",
+          "answer"
+        ],
+        "title": "Clarification"
+      },
+      "Context": {
+        "properties": {
+          "screen": {
+            "type": "string",
+            "enum": [
+              "HOME",
+              "CREDITS",
+              "WIZARD",
+              "APPLICATIONS",
+              "DOCUMENTS"
+            ],
+            "title": "Screen"
+          },
+          "applications": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Applications"
+          },
+          "documents": {
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array",
+            "maxItems": 30,
+            "title": "Documents"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "screen"
+        ],
+        "title": "Context"
+      },
+      "Entities": {
+        "properties": {
+          "purposeText": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 1000
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purposetext"
+          },
+          "goals": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "GOODS",
+                "ADVERTISING",
+                "EXPENSES",
+                "EQUIPMENT",
+                "REPAIR"
+              ]
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Goals"
+          },
+          "amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^\\d{1,12}(?:\\.\\d{1,2})?$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Amount"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "RUB",
+                  "USD",
+                  "EUR",
+                  "OTHER"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "termMonths": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1200.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Termmonths"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "purposeText",
+          "goals",
+          "amount",
+          "currency",
+          "termMonths"
+        ],
+        "title": "Entities"
+      },
+      "Evidence": {
+        "properties": {
+          "field": {
+            "type": "string",
+            "enum": [
+              "purposeText",
+              "goals",
+              "amount",
+              "termMonths"
+            ],
+            "title": "Field"
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Quote"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "field",
+          "quote"
+        ],
+        "title": "Evidence"
+      },
+      "GoalEvidence": {
+        "properties": {
+          "goal": {
+            "type": "string",
+            "enum": [
+              "GOODS",
+              "ADVERTISING",
+              "EXPENSES",
+              "EQUIPMENT",
+              "REPAIR"
+            ],
+            "title": "Goal"
+          },
+          "quote": {
+            "type": "string",
+            "maxLength": 500,
+            "minLength": 1,
+            "title": "Quote"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "goal",
+          "quote"
+        ],
+        "title": "GoalEvidence"
+      },
+      "GoalRequest": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "clarifications": {
+            "items": {
+              "$ref": "#/components/schemas/Clarification"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "title": "Clarifications"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text"
+        ],
+        "title": "GoalRequest"
+      },
+      "GoalResult": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1",
+            "title": "Schemaversion"
+          },
+          "businessUse": {
+            "type": "string",
+            "enum": [
+              "BUSINESS",
+              "PERSONAL",
+              "MIXED",
+              "UNCLEAR",
+              "NOT_APPLICABLE"
+            ],
+            "title": "Businessuse"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "NEEDS_CLARIFICATION",
+              "NON_BUSINESS",
+              "UNSUPPORTED",
+              "UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "goals": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "GOODS",
+                "ADVERTISING",
+                "EXPENSES",
+                "EQUIPMENT",
+                "REPAIR"
+              ]
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Goals"
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "BUSINESS_PURPOSE",
+              "PERSONAL_PURPOSE",
+              "AMBIGUOUS_PURPOSE",
+              "OUTSIDE_TAXONOMY",
+              "AI_UNAVAILABLE"
+            ],
+            "title": "Reasoncode"
+          },
+          "questionCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SPECIFY_BUSINESS_USE",
+                  "SPECIFY_PURPOSE",
+                  "SPECIFY_AMOUNT",
+                  "SPECIFY_TERM",
+                  "SPECIFY_CURRENCY",
+                  "EXCLUDE_PERSONAL_PURPOSE",
+                  "SELECT_APPLICATION",
+                  "SELECT_DOCUMENT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questioncode"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/GoalEvidence"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Evidence"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DISABLED",
+                  "DEPENDENCY_UNAVAILABLE",
+                  "TIMEOUT",
+                  "INVALID_RESPONSE",
+                  "OVERLOADED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "businessUse",
+          "status",
+          "goals",
+          "reasonCode",
+          "questionCode",
+          "evidence",
+          "fallbackReason"
+        ],
+        "title": "GoalResult"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "HistoryMessage": {
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ],
+            "title": "Role"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Content"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "role",
+          "content"
+        ],
+        "title": "HistoryMessage"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      },
+      "GoalResponse": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1",
+            "title": "Schemaversion"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "CLASSIFIED",
+              "NEEDS_CLARIFICATION",
+              "NON_BUSINESS",
+              "UNSUPPORTED",
+              "UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "goals": {
+            "items": {
+              "type": "string",
+              "enum": [
+                "GOODS",
+                "ADVERTISING",
+                "EXPENSES",
+                "EQUIPMENT",
+                "REPAIR"
+              ]
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Goals"
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "BUSINESS_PURPOSE",
+              "PERSONAL_PURPOSE",
+              "AMBIGUOUS_PURPOSE",
+              "OUTSIDE_TAXONOMY",
+              "AI_UNAVAILABLE"
+            ],
+            "title": "Reasoncode"
+          },
+          "questionCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SPECIFY_BUSINESS_USE",
+                  "SPECIFY_PURPOSE",
+                  "SPECIFY_AMOUNT",
+                  "SPECIFY_TERM",
+                  "SPECIFY_CURRENCY",
+                  "EXCLUDE_PERSONAL_PURPOSE",
+                  "SELECT_APPLICATION",
+                  "SELECT_DOCUMENT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questioncode"
+          },
+          "evidence": {
+            "items": {
+              "$ref": "#/components/schemas/GoalEvidence"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Evidence"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DISABLED",
+                  "DEPENDENCY_UNAVAILABLE",
+                  "TIMEOUT",
+                  "INVALID_RESPONSE",
+                  "OVERLOADED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          },
+          "clarifyingQuestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "status",
+          "goals",
+          "reasonCode",
+          "questionCode",
+          "evidence",
+          "fallbackReason",
+          "clarifyingQuestion"
+        ]
+      },
+      "FieldError": {
+        "type": "object",
+        "required": [
+          "field",
+          "message"
+        ],
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "Action": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "label",
+          "requiresConfirmation"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "START_SELECTION",
+              "CONTINUE_DRAFT",
+              "OPEN_APPLICATION",
+              "SHOW_DOCUMENT",
+              "EXPLAIN_TERMS"
+            ]
+          },
+          "label": {
+            "type": "string"
+          },
+          "requiresConfirmation": {
+            "const": true
+          },
+          "applicationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "topic": {
+            "anyOf": [
+              {
+                "enum": [
+                  "RATE",
+                  "PAYMENT",
+                  "FEE",
+                  "DOCUMENTS",
+                  "PREVIEW"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "AssistantResponse": {
+        "properties": {
+          "schemaVersion": {
+            "type": "string",
+            "const": "1",
+            "title": "Schemaversion"
+          },
+          "intent": {
+            "type": "string",
+            "enum": [
+              "START_SELECTION",
+              "CONTINUE_DRAFT",
+              "OPEN_APPLICATION",
+              "SHOW_DOCUMENT",
+              "EXPLAIN_TERMS",
+              "UNKNOWN",
+              "OUT_OF_SCOPE"
+            ],
+            "title": "Intent"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "READY",
+              "NEEDS_CLARIFICATION",
+              "NON_BUSINESS",
+              "UNSUPPORTED",
+              "UNAVAILABLE"
+            ],
+            "title": "Status"
+          },
+          "entities": {
+            "$ref": "#/components/schemas/Entities"
+          },
+          "questionCode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "SPECIFY_BUSINESS_USE",
+                  "SPECIFY_PURPOSE",
+                  "SPECIFY_AMOUNT",
+                  "SPECIFY_TERM",
+                  "SPECIFY_CURRENCY",
+                  "EXCLUDE_PERSONAL_PURPOSE",
+                  "SELECT_APPLICATION",
+                  "SELECT_DOCUMENT"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questioncode"
+          },
+          "fallbackReason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "DISABLED",
+                  "DEPENDENCY_UNAVAILABLE",
+                  "TIMEOUT",
+                  "INVALID_RESPONSE",
+                  "OVERLOADED"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fallbackreason"
+          },
+          "clarifyingQuestion": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reply": {
+            "type": "string"
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Action"
+            }
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "intent",
+          "status",
+          "entities",
+          "questionCode",
+          "fallbackReason",
+          "clarifyingQuestion",
+          "reply",
+          "actions",
+          "fieldErrors"
+        ]
+      },
+      "BrowserContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "screen"
+        ],
+        "properties": {
+          "screen": {
+            "enum": [
+              "HOME",
+              "CREDITS",
+              "WIZARD",
+              "APPLICATIONS",
+              "DOCUMENTS"
+            ]
+          },
+          "applicationId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "documentId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "PublicAssistantRequest": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 1,
+            "title": "Message"
+          },
+          "context": {
+            "$ref": "#/components/schemas/BrowserContext"
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/HistoryMessage"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "History"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "message",
+          "context"
+        ],
+        "title": "AssistantRequest"
+      },
+      "Capabilities": {
+        "type": "object",
+        "required": [
+          "schemaVersion",
+          "enabled",
+          "features"
+        ],
+        "properties": {
+          "schemaVersion": {
+            "const": "1"
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "features": {
+            "type": "object",
+            "required": [
+              "goalClassification",
+              "assistant"
+            ],
+            "properties": {
+              "goalClassification": {
+                "type": "boolean"
+              },
+              "assistant": {
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      },
+      "ApiError": {
+        "type": "object",
+        "required": [
+          "code",
+          "message",
+          "fieldErrors"
+        ],
+        "properties": {
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "fieldErrors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldError"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,6 +1,4 @@
-import type { ReactElement } from 'react';
-import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
-import { Typography } from '@alfalab/core-components/typography';
+import { BrowserRouter, Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import Layout from './components/Layout';
 import { AppProvider, useApp } from './context/AppContext';
 import Credits from './pages/Credits';
@@ -10,43 +8,23 @@ import Product from './pages/Product';
 import Wizard from './pages/Wizard';
 import Applications from './pages/Applications';
 import Documents from './pages/Documents';
-
-/** Пускает внутрь только авторизованных, остальных отправляет на /login. */
-function ProtectedRoute({ children }: { children?: ReactElement }) {
-  const { isAuthenticated } = useApp();
+import Staff from './pages/Staff';
+function Protected({ staff = false }: { staff?: boolean }) {
+  const { isAuthenticated, checkingSession, user } = useApp();
   const location = useLocation();
-  
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
-  }
-  return children ?? <Outlet />;
+  if (checkingSession) return <p>Проверяем сессию…</p>;
+  if (!isAuthenticated) return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  if (staff && user?.role !== 'EMPLOYEE') return <Navigate to="/" replace />;
+  if (!staff && user?.role === 'EMPLOYEE') return <Navigate to="/bank" replace />;
+  return <Outlet />;
 }
-
-/** Заглушка для экранов следующих этапов. */
-function ComingSoon({ title }: { title: string }) {
-  return (
-    <div className="page-head">
-      <Typography.Title tag="h1" view="large" weight="bold">
-        {title}
-      </Typography.Title>
-      <Typography.Text view="primary-medium" color="secondary" tag="div">
-        Экран будет реализован на следующем этапе.
-      </Typography.Text>
-      <p>
-        <Link to="/">← На главную</Link>
-      </p>
-    </div>
-  );
-}
-
 export default function App() {
   return (
     <BrowserRouter>
       <AppProvider>
         <Routes>
           <Route path="/login" element={<Login />} />
-
-          <Route element={<ProtectedRoute />}>
+          <Route element={<Protected />}>
             <Route element={<Layout />}>
               <Route index element={<Home />} />
               <Route path="credits" element={<Credits />} />
@@ -55,10 +33,10 @@ export default function App() {
               <Route path="documents" element={<Documents />} />
               <Route path="applications" element={<Applications />} />
             </Route>
-            {/* Экран банка — отдельный интерфейс сотрудника, без клиентского Layout */}
-            <Route path="bank" element={<ComingSoon title="Заявки банка" />} />
           </Route>
-
+          <Route element={<Protected staff />}>
+            <Route path="bank" element={<Staff />} />
+          </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </AppProvider>

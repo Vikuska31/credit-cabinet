@@ -64,8 +64,9 @@ public class AppConfig {
         return mocksUrl.isBlank() ? dir.bankSource() : new HttpBankDataSource(mocksUrl);
     }
 
-    @Bean DocumentCatalog documentCatalog(ProfilesDirectory dir, @Value("${app.documents-url:}") String documentsUrl) {
-        return documentsUrl.isBlank() ? dir.documents() : new HttpDocumentCatalog(documentsUrl);
+    @Bean DocumentCatalog documentCatalog(ProfilesDirectory dir, @Value("${app.documents-url:}") String documentsUrl,
+                                         @Value("${app.documents-token:}") String token) {
+        return documentsUrl.isBlank() ? dir.documents() : new HttpDocumentCatalog(documentsUrl, token);
     }
 
     // ---------- Ядро ----------

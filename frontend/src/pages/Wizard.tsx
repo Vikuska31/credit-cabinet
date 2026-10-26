@@ -1,381 +1,399 @@
-import { useEffect, useRef, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@alfalab/core-components/button';
-import { Checkbox } from '@alfalab/core-components/checkbox';
-import { Dropzone } from '@alfalab/core-components/dropzone';
-import { Input } from '@alfalab/core-components/input';
-import { Notification } from '@alfalab/core-components/notification';
-import { ProgressBar } from '@alfalab/core-components/progress-bar';
-import { SliderInput } from '@alfalab/core-components/slider-input';
-import { Tag } from '@alfalab/core-components/tag';
-import { Typography } from '@alfalab/core-components/typography';
+import { useEffect, useState, type FormEvent } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { applicationAction, getApplication, getChecks, updateDraft } from '../api/applications';
+import { getDocuments, getGoals, getTariff, preview } from '../api/catalog';
+import { ApiError } from '../api/client';
 import { useApp } from '../context/AppContext';
-import { formatMonths, formatRub } from '../utils/format';
-import styles from './Wizard.module.css';
-
-interface WizardLocationState {
-  productId?: string;
-  purpose?: string;
-  amount?: number;
-  months?: number;
-}
-
-const STEPS = ['Параметры', 'Компания', 'Документы', 'Проверка'] as const;
-const LAST_STEP = STEPS.length - 1;
-
-const AMOUNT = { min: 100_000, max: 3_000_000, step: 10_000, initial: 750_000 };
-const MONTHS = { min: 6, max: 36, step: 1, initial: 12 };
-
-const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
-const initialNumber = (v: unknown, fallback: number) =>
-  typeof v === 'number' && Number.isFinite(v) && v > 0 ? v : fallback;
-
+import type {
+  Application,
+  DocumentCheck,
+  DocumentRef,
+  GoalInfo,
+  LoanGoal,
+  LoanOffer,
+  Tariff,
+} from '../types';
+import { formatRub } from '../utils/format';
+import { DOCUMENT_LABELS } from '../utils/documents';
+const STEPS = ['Параметры', 'Компания', 'Документы', 'Проверка'];
 export default function Wizard() {
+  const [params] = useSearchParams();
+  return <WizardForm key={params.get('applicationId') || 'new'} />;
+}
+function WizardForm() {
+  const [params] = useSearchParams();
+  const id = params.get('applicationId');
   const navigate = useNavigate();
-  const { user } = useApp();
-  const incoming = (useLocation().state as WizardLocationState | null) ?? {};
-
-  const [step, setStep] = useState(0);
-  const [amountInput, setAmountInput] = useState<number | ''>(
-    clamp(initialNumber(incoming.amount, AMOUNT.initial), AMOUNT.min, AMOUNT.max),
-  );
-  const [monthsInput, setMonthsInput] = useState<number | ''>(
-    clamp(initialNumber(incoming.months, MONTHS.initial), MONTHS.min, MONTHS.max),
-  );
-  const [files, setFiles] = useState<File[]>([]);
-  const [confirmed, setConfirmed] = useState(false);
-  const [consentError, setConsentError] = useState(false);
-  const [submitted, setSubmitted] = useState(false);
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const redirectTimer = useRef<number>(undefined);
-  useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
-
-  const amount = clamp(Number(amountInput) || AMOUNT.min, AMOUNT.min, AMOUNT.max);
-  const months = clamp(Number(monthsInput) || MONTHS.min, MONTHS.min, MONTHS.max);
-  const purpose = incoming.purpose || 'Развитие';
-  const equipment = /equip|оборудован/i.test(incoming.productId ?? '');
-  const productName = equipment ? 'Кредит на оборудование' : 'Кредит на развитие бизнеса';
-
-  const progress = ((step + 1) / STEPS.length) * 100;
-  const notSpecified = 'Не указано';
-
-  const addFiles = (list: File[]) =>
-    setFiles((prev) => [...prev, ...list.filter((f) => !prev.some((p) => p.name === f.name))]);
-
-  const next = () => {
-    // Фиксируем значения, введённые вручную, чтобы в сводке не осталось пустых полей.
-    setAmountInput(amount);
-    setMonthsInput(months);
-    setStep((s) => Math.min(LAST_STEP, s + 1));
-  };
-  const back = () => setStep((s) => Math.max(0, s - 1));
-
-  const submit = () => {
-    if (!confirmed) {
-      setConsentError(true);
-      return;
+  const { user, refreshApplications } = useApp();
+  const [app, setApp] = useState<Application | null>(null);
+  const [catalog, setCatalog] = useState<GoalInfo[]>([]);
+  const [tariff, setTariff] = useState<Tariff | null>(null);
+  const [checks, setChecks] = useState<DocumentCheck[]>([]);
+  const [library, setLibrary] = useState<DocumentRef[]>([]);
+  const [amount, setAmount] = useState('');
+  const [term, setTerm] = useState('');
+  const [goals, setGoals] = useState<LoanGoal[]>([]);
+  const [consent, setConsent] = useState(false);
+  const [selectedKind, setSelectedKind] = useState<LoanOffer['kind']>('REQUESTED');
+  const [selectedOffer, setSelectedOffer] = useState<LoanOffer | null>(null);
+  const [attached, setAttached] = useState<string[]>([]);
+  const [step, setStep] = useState(1);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    let active = true;
+    Promise.all([getApplication(id), getGoals(), getTariff(), getDocuments(), getChecks(id)])
+      .then(async ([a, g, t, d, c]) => {
+        if (!active) return;
+        setApp(a);
+        setCatalog(g);
+        setTariff(t);
+        setLibrary(d);
+        setChecks(c);
+        setAmount(String(a.amount ?? ''));
+        setTerm(String(a.termMonths ?? ''));
+        setGoals(a.goals);
+        setConsent(a.consent);
+        setAttached(a.attachedDocumentIds);
+        setStep(a.step);
+        setSelectedKind(a.selectedKind);
+        if (a.amount && a.termMonths) {
+          const calculation = await preview({
+            goals: a.goals,
+            amount: a.amount,
+            termMonths: a.termMonths,
+          });
+          if (active)
+            setSelectedOffer(calculation.offers.find((o) => o.kind === a.selectedKind) || null);
+        }
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+  const save = async (next = step) => {
+    if (!id) return null;
+    const a = await updateDraft(id, {
+      goals,
+      amount: amount === '' ? null : Number(amount),
+      termMonths: term === '' ? null : Number(term),
+      consent,
+      selectedKind,
+      attachedDocumentIds: attached,
+      step: next,
+    });
+    setApp(a);
+    setStep(a.step);
+    setChecks(await getChecks(id));
+    if (a.amount && a.termMonths) {
+      const calculation = await preview({
+        goals: a.goals,
+        amount: a.amount,
+        termMonths: a.termMonths,
+      });
+      const offer = calculation.offers.find((o) => o.kind === a.selectedKind);
+      setSelectedOffer(offer || null);
+      if (!offer)
+        throw new Error(
+          'Для этого срока выбранный расчёт недоступен. Выберите «По вашему запросу».',
+        );
     }
-    setSubmitted(true);
-    redirectTimer.current = window.setTimeout(() => navigate('/applications'), 1800);
+    await refreshApplications();
+    return a;
   };
-
+  const run = async (action: () => Promise<unknown>) => {
+    if (busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      await action();
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? [e.message, ...e.fieldErrors.map((f) => f.message)].join(' · ')
+          : e instanceof Error
+            ? e.message
+            : 'Ошибка',
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    await run(async () => {
+      await save();
+      const sent = await applicationAction(id!, 'submit');
+      await refreshApplications();
+      navigate('/applications?applicationId=' + sent.id);
+    });
+  };
+  if (!id)
+    return (
+      <section className="cc-card">
+        <h1>Начните с подбора</h1>
+        <Link to="/credits" className="cc-button">
+          Выбрать параметры
+        </Link>
+      </section>
+    );
+  if (error && !app)
+    return (
+      <p role="alert" className="cc-error">
+        {error}
+      </p>
+    );
+  if (!app || !tariff) return <p>Загружаем черновик…</p>;
+  if (app.status !== 'DRAFT')
+    return (
+      <section className="cc-card">
+        <p>Заявка уже отправлена: {app.statusTitle}</p>
+        <Link to={'/applications?applicationId=' + id}>Открыть заявку</Link>
+      </section>
+    );
   return (
     <>
       <div className="page-head">
-        <Typography.Text view="secondary-small" color="secondary" className="eyebrow">
-          Заявка
-        </Typography.Text>
-        <Typography.Title tag="h1" view="large" weight="bold">
-          Заявка на кредит
-        </Typography.Title>
-        <Typography.Text view="primary-medium" color="secondary" tag="div">
-          Шаг {step + 1} из {STEPS.length}. Проверьте данные перед отправкой.
-        </Typography.Text>
+        <h1>Заявка № {app.number}</h1>
+        <p>
+          Шаг {step} из 4 · {STEPS[step - 1]}
+        </p>
       </div>
-
-      <ol className={styles.stepper} aria-label="Шаги заявки">
-        {STEPS.map((title, i) => (
-          <li
-            key={title}
-            aria-current={i === step ? 'step' : undefined}
-            className={`${styles.step} ${i === step ? styles.stepCurrent : ''} ${i < step ? styles.stepDone : ''}`}
-          >
-            <span className={styles.stepNum} aria-hidden="true">
-              {i < step ? '✓' : i + 1}
-            </span>
-            {title}
+      <ol className="cc-steps">
+        {STEPS.map((s, i) => (
+          <li key={s} aria-current={i + 1 === step ? 'step' : undefined}>
+            {s}
           </li>
         ))}
       </ol>
-
-      <div className={styles.layout}>
-        <section className={styles.card} aria-labelledby="wizard-step-title">
-          {step === 0 && (
-            <>
-              <Typography.Title tag="h2" view="small" weight="bold" id="wizard-step-title">
-                Сколько и на какой срок?
-              </Typography.Title>
-              <Typography.Text view="primary-small" color="secondary" tag="div">
-                Цель «{purpose}» и продукт уже выбраны при подборе.
-              </Typography.Text>
-              <div className={styles.body}>
-                <SliderInput
-                  label="Сумма, ₽"
-                  block
-                  size={64}
-                  min={AMOUNT.min}
-                  max={AMOUNT.max}
-                  step={AMOUNT.step}
-                  value={amountInput}
-                  sliderValue={amount}
-                  onChange={(_, { value }) => setAmountInput(value)}
-                  onBlur={() => setAmountInput(amount)}
-                  pips={{
-                    mode: 'values',
-                    values: [AMOUNT.min, AMOUNT.max],
-                    format: { to: (v: number) => formatRub(v) },
-                  }}
-                />
-                <SliderInput
-                  label="Срок, месяцев"
-                  block
-                  size={64}
-                  min={MONTHS.min}
-                  max={MONTHS.max}
-                  step={MONTHS.step}
-                  value={monthsInput}
-                  sliderValue={months}
-                  onChange={(_, { value }) => setMonthsInput(value)}
-                  onBlur={() => setMonthsInput(months)}
-                  pips={{
-                    mode: 'values',
-                    values: [MONTHS.min, MONTHS.max],
-                    format: { to: (v: number) => formatMonths(v) },
-                  }}
-                />
-                <Typography.Text view="primary-small" color="secondary" tag="div" className={styles.note}>
-                  Это запрос клиента. Банк может предложить другие условия после проверки.
-                </Typography.Text>
-              </div>
-            </>
-          )}
-
-          {step === 1 && (
-            <>
-              <Typography.Title tag="h2" view="small" weight="bold" id="wizard-step-title">
-                Данные компании
-              </Typography.Title>
-              <Typography.Text view="primary-small" color="secondary" tag="div">
-                Данные подтянуты из вашего профиля. Проверьте, что вы используете нужный аккаунт.
-              </Typography.Text>
-              <div className={styles.body}>
-                <Input
-                  label="Компания"
-                  block
-                  size={56}
-                  readOnly
-                  value={user?.companyName ?? notSpecified}
-                />
-                <div className={styles.fieldsRow}>
-                  <Input label="ИНН" block size={56} readOnly value={user?.inn ?? notSpecified} />
-                  <Input
-                    label="ФИО"
-                    block
-                    size={56}
-                    readOnly
-                    value={user?.fullName ?? user?.firstName ?? notSpecified}
-                  />
-                </div>
-                <Typography.Text view="primary-small" color="secondary" tag="div" className={styles.note}>
-                  Изменить данные компании в заявке нельзя. Если они устарели, обратитесь в банк.
-                </Typography.Text>
-              </div>
-            </>
-          )}
-
-          {step === 2 && (
-            <>
-              <Typography.Title tag="h2" view="small" weight="bold" id="wizard-step-title">
-                Документы
-              </Typography.Title>
-              <Typography.Text view="primary-small" color="secondary" tag="div">
-                Нужны финансовый документ (например, выписка) и документ компании.
-              </Typography.Text>
-              <div className={styles.body}>
-                <Dropzone block className={styles.dropzone} onDrop={addFiles}>
-                  <div className={styles.dropzoneContent}>
-                    <span className={styles.dropzoneIcon} aria-hidden="true">
-                      ⇪
-                    </span>
-                    <Typography.Text view="primary-medium" weight="bold" tag="div">
-                      Перетащите файлы сюда
-                    </Typography.Text>
-                    <Typography.Text view="primary-small" color="secondary" tag="div">
-                      или
-                    </Typography.Text>
-                    <Button view="secondary" size={40} onClick={() => fileInputRef.current?.click()}>
-                      Выбрать файл
-                    </Button>
+      {error && (
+        <p role="alert" className="cc-error">
+          {error}
+        </p>
+      )}
+      <form className="cc-card cc-form" onSubmit={(e) => void submit(e)}>
+        {step === 1 && (
+          <>
+            <h2>Параметры</h2>
+            <div className="cc-goals">
+              {catalog
+                .filter((g) => g.code !== 'OTHER')
+                .map((g) => (
+                  <label key={g.code}>
                     <input
-                      ref={fileInputRef}
-                      type="file"
-                      multiple
-                      className={styles.hiddenInput}
-                      onChange={(e) => {
-                        addFiles(Array.from(e.target.files ?? []));
-                        e.target.value = '';
-                      }}
+                      type="checkbox"
+                      checked={goals.includes(g.code)}
+                      onChange={() =>
+                        setGoals((old) =>
+                          old.includes(g.code) ? old.filter((x) => x !== g.code) : [...old, g.code],
+                        )
+                      }
                     />
-                  </div>
-                </Dropzone>
-
-                {files.length > 0 && (
-                  <ul className={styles.files}>
-                    {files.map((file) => (
-                      <li key={file.name} className={styles.file}>
-                        <span className={styles.fileName}>{file.name}</span>
-                        <Button
-                          view="text"
-                          size={32}
-                          onClick={() => setFiles((prev) => prev.filter((f) => f !== file))}
-                        >
-                          Убрать
-                        </Button>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-
-                <Typography.Text view="primary-small" color="secondary" tag="div" className={styles.note}>
-                  Демонстрация: файлы не отправляются на сервер.
-                </Typography.Text>
-              </div>
-            </>
-          )}
-
-          {step === 3 && (
-            <>
-              <Typography.Title tag="h2" view="small" weight="bold" id="wizard-step-title">
-                Проверка и отправка
-              </Typography.Title>
-              <Typography.Text view="primary-small" color="secondary" tag="div">
-                Проверьте данные. После отправки появится номер и статус заявки.
-              </Typography.Text>
-              <div className={styles.body}>
-                <dl className={styles.summary}>
-                  <div>
-                    <dt>Продукт</dt>
-                    <dd>{productName}</dd>
-                  </div>
-                  <div>
-                    <dt>Цель</dt>
-                    <dd>{purpose}</dd>
-                  </div>
-                  <div>
-                    <dt>Сумма</dt>
-                    <dd>{formatRub(amount)}</dd>
-                  </div>
-                  <div>
-                    <dt>Срок</dt>
-                    <dd>{formatMonths(months)}</dd>
-                  </div>
-                  <div>
-                    <dt>Компания</dt>
-                    <dd>{user?.companyName ?? notSpecified}</dd>
-                  </div>
-                  <div>
-                    <dt>ИНН</dt>
-                    <dd>{user?.inn ?? notSpecified}</dd>
-                  </div>
-                  <div>
-                    <dt>Документы</dt>
-                    <dd>{files.length ? `${files.length} шт.` : 'Не добавлены'}</dd>
-                  </div>
-                </dl>
-
-                <Checkbox
-                  block
-                  size={24}
-                  checked={confirmed}
-                  error={consentError && !confirmed ? 'Подтвердите данные, чтобы отправить заявку' : undefined}
-                  label="Я подтверждаю данные"
-                  onChange={(_, { checked }) => {
-                    setConfirmed(checked);
-                    if (checked) setConsentError(false);
-                  }}
-                />
-              </div>
-            </>
-          )}
-
-          <div className={styles.actions}>
-            {step > 0 && (
-              <Button view="outlined" size={48} onClick={back} disabled={submitted}>
-                Назад
-              </Button>
-            )}
-            <span className={styles.spacer} />
-            {step < LAST_STEP ? (
-              <Button view="accent" size={48} onClick={next}>
-                Далее →
-              </Button>
-            ) : (
-              <Button view="accent" size={48} onClick={submit} loading={submitted}>
-                Отправить заявку
-              </Button>
-            )}
-          </div>
-        </section>
-
-        <aside className={`${styles.aside}`} aria-label="Сводка заявки">
-          <div className={styles.card}>
-            <Typography.Text view="secondary-small" color="secondary" className="eyebrow">
-              Ваша заявка
-            </Typography.Text>
-            <Typography.Title tag="h2" view="small" weight="bold" className={styles.asideProduct}>
-              {productName}
-            </Typography.Title>
-            <dl className={styles.asideFacts}>
-              <div>
-                <dt>Сумма</dt>
-                <dd>{formatRub(amount)}</dd>
-              </div>
-              <div>
-                <dt>Срок</dt>
-                <dd>{formatMonths(months)}</dd>
-              </div>
-              <div>
-                <dt>Статус</dt>
-                <dd>
-                  <Tag view="filled" size={32} className="tag tag--purple">
-                    {submitted ? 'Отправлена' : 'Черновик'}
-                  </Tag>
-                </dd>
-              </div>
-            </dl>
-            <div className={styles.progressLabel}>
-              <Typography.Text view="secondary-small" color="secondary">
-                Заполнение
-              </Typography.Text>
-              <Typography.Text view="secondary-small" weight="bold">
-                {progress}%
-              </Typography.Text>
+                    {g.title}
+                  </label>
+                ))}
             </div>
-            <ProgressBar value={progress} view="accent" size={8} aria-label="Прогресс заполнения заявки" />
-          </div>
-        </aside>
-      </div>
-
-      <Notification
-        badge="positive-checkmark"
-        title="Заявка отправлена"
-        visible={submitted}
-        offset={88}
-        autoCloseDelay={null}
-      >
-        Переходим к списку заявок…
-      </Notification>
+            {goals.includes('OTHER') && (
+              <p>
+                Выберите конкретные категории.{' '}
+                <button
+                  type="button"
+                  onClick={() => setGoals((old) => old.filter((g) => g !== 'OTHER'))}
+                >
+                  Убрать «Другое»
+                </button>
+              </p>
+            )}
+            <label>
+              Сумма, ₽
+              <input
+                required
+                type="number"
+                step=".01"
+                min={tariff.minAmount}
+                max={tariff.maxAmount}
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+            </label>
+            <label>
+              Срок, месяцев
+              <input
+                required
+                type="number"
+                min={tariff.minTermMonths}
+                max={tariff.maxTermMonths}
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
+              />
+            </label>
+            <label>
+              Выбранный расчёт
+              <select
+                value={selectedKind}
+                onChange={(e) => setSelectedKind(e.target.value as LoanOffer['kind'])}
+              >
+                <option value="REQUESTED">По вашему запросу</option>
+                <option value="LOWER_PAYMENT" disabled={Number(term) >= tariff.maxTermMonths}>
+                  Меньше платёж в месяц
+                </option>
+              </select>
+            </label>
+          </>
+        )}
+        {step === 2 && (
+          <>
+            <h2>Данные компании</h2>
+            <p>{user?.companyName}</p>
+            <p>ИНН {user?.inn}</p>
+            <p>{user?.fullName}</p>
+            <p>Сведения из карточки клиента банка.</p>
+          </>
+        )}
+        {step === 3 && (
+          <>
+            <h2>Документы</h2>
+            <p>
+              <Link to="/documents" target="_blank" rel="noreferrer">
+                Загрузить документ в библиотеку
+              </Link>
+              , затем{' '}
+              <button
+                type="button"
+                onClick={() =>
+                  void run(async () => {
+                    setLibrary(await getDocuments());
+                    setChecks(await getChecks(id));
+                  })
+                }
+              >
+                обновить список
+              </button>
+              .
+            </p>
+            {checks.map((c) => (
+              <div className="cc-notice" key={c.type}>
+                <strong>{DOCUMENT_LABELS[c.type] || c.type}</strong>
+                <p>{c.reason}</p>
+                <p>
+                  {c.attached
+                    ? 'Приложен: ' + c.attached.title
+                    : c.suggested
+                      ? 'Найден: ' + c.suggested.title
+                      : c.blocksSubmit
+                        ? 'Требуется до отправки'
+                        : 'Можно предоставить после отправки'}
+                </p>
+              </div>
+            ))}
+            <button
+              type="button"
+              className="cc-button secondary"
+              disabled={busy}
+              onClick={() =>
+                void run(async () => {
+                  await save();
+                  const a = await applicationAction(id, 'documents/attach-suggested');
+                  setApp(a);
+                  setAttached(a.attachedDocumentIds);
+                  setChecks(await getChecks(id));
+                })
+              }
+            >
+              Приложить найденные документы
+            </button>
+            {library.map((d) => (
+              <label key={d.id}>
+                <input
+                  type="checkbox"
+                  checked={attached.includes(d.id)}
+                  onChange={() =>
+                    setAttached((old) =>
+                      old.includes(d.id) ? old.filter((x) => x !== d.id) : [...old, d.id],
+                    )
+                  }
+                />
+                {d.title} · версия {d.version}
+              </label>
+            ))}
+          </>
+        )}
+        {step === 4 && (
+          <>
+            <h2>Проверьте заявку</h2>
+            <p>
+              {catalog
+                .filter((g) => goals.includes(g.code))
+                .map((g) => g.title)
+                .join(', ')}
+            </p>
+            <p>
+              {formatRub(Number(amount))} · {selectedOffer?.termMonths ?? term} месяцев
+            </p>
+            {selectedOffer && (
+              <dl className="cc-facts">
+                <dt>Ставка</dt>
+                <dd>{selectedOffer.annualRatePercent}%</dd>
+                <dt>Платёж в месяц</dt>
+                <dd>{formatRub(selectedOffer.monthlyPayment)}</dd>
+                <dt>Комиссия</dt>
+                <dd>{formatRub(selectedOffer.upfrontFee)}</dd>
+                <dt>Общая выплата</dt>
+                <dd>{formatRub(selectedOffer.totalPayout)}</dd>
+              </dl>
+            )}
+            <p>{user?.companyName}</p>
+            <p>Документов: {attached.length}</p>
+            <label>
+              <input
+                type="checkbox"
+                required
+                checked={consent}
+                onChange={(e) => setConsent(e.target.checked)}
+              />
+              Я подтверждаю данные и согласен на обработку заявки
+            </label>
+          </>
+        )}
+        <div className="cc-actions">
+          <button
+            type="button"
+            className="cc-button secondary"
+            disabled={busy}
+            onClick={() => void run(() => save())}
+          >
+            Сохранить черновик
+          </button>
+          {step > 1 && (
+            <button
+              type="button"
+              className="cc-button secondary"
+              disabled={busy}
+              onClick={() => void run(() => save(step - 1))}
+            >
+              Назад
+            </button>
+          )}
+          {step < 4 ? (
+            <button
+              type="button"
+              className="cc-button"
+              disabled={busy}
+              onClick={() => void run(() => save(step + 1))}
+            >
+              Далее
+            </button>
+          ) : (
+            <button className="cc-button" disabled={busy || !consent || !selectedOffer}>
+              Отправить заявку
+            </button>
+          )}
+        </div>
+      </form>
     </>
   );
 }

@@ -12,6 +12,23 @@ import java.util.List;
 @RestControllerAdvice
 public class ApiExceptionHandler {
 
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    ResponseEntity<ErrorBody> tooLarge(org.springframework.web.multipart.MaxUploadSizeExceededException e) {
+        return ResponseEntity.badRequest().body(new ErrorBody("validation_error", "Требуется PDF до 20 МБ", List.of(new ApiException.FieldError("file", "Файл слишком большой"))));
+    }
+
+    @ExceptionHandler({org.springframework.web.bind.MissingServletRequestParameterException.class, org.springframework.web.method.annotation.MethodArgumentTypeMismatchException.class})
+    ResponseEntity<ErrorBody> invalidParameter(Exception e) {
+        return ResponseEntity.badRequest().body(new ErrorBody("validation_error", "Проверьте обязательные параметры и их формат", List.of()));
+    }
+
+    @ExceptionHandler(org.springframework.web.bind.MethodArgumentNotValidException.class)
+    ResponseEntity<ErrorBody> validation(org.springframework.web.bind.MethodArgumentNotValidException e) {
+        var fields = e.getBindingResult().getFieldErrors().stream()
+                .map(f -> new ApiException.FieldError(f.getField(), f.getDefaultMessage())).toList();
+        return ResponseEntity.badRequest().body(new ErrorBody("validation_error", "Проверьте введённые данные", fields));
+    }
+
     public record ErrorBody(String code, String message, List<ApiException.FieldError> fieldErrors) {}
 
     @ExceptionHandler(ApiException.class)
