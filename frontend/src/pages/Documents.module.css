@@ -183,3 +183,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Выбор файла в стиле проекта вместо серой кнопки браузера */
+.fileField {
+  grid-column: 1 / -1;
+}
+.filePicker {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 16px;
+  border: 1px dashed #f3b6b1;
+  border-radius: 16px;
+  background: #fffafa;
+}
+.fileButton {
+  background: #fff0ef !important;
+  color: #ef3124 !important;
+}
+.fileButton:hover {
+  background: #ffe3e0 !important;
+}
+.fileName {
+  font-size: 16px;
+  font-weight: 600;
+  color: #16181d;
+  overflow-wrap: anywhere;
+}
+.fileEmpty {
+  font-size: 16px;
+  color: #6b7280;
+}

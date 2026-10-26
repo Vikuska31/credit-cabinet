@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { DocumentAddMIcon } from '@alfalab/icons-glyph/DocumentAddMIcon';
 import { DocumentPdfMIcon } from '@alfalab/icons-glyph/DocumentPdfMIcon';
 import { Button } from '@alfalab/core-components/button';
 import { Tab, Tabs } from '@alfalab/core-components/tabs';
@@ -35,6 +36,8 @@ export default function Documents() {
   const [filter, setFilter] = useState<Filter>('all');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const [fileName, setFileName] = useState('');
+  const fileInput = useRef<HTMLInputElement>(null);
   const [params, setParams] = useSearchParams();
   const selected = documents.find((d) => d.id === params.get('documentId'));
 
@@ -53,6 +56,7 @@ export default function Documents() {
       await uploadDocument(new FormData(form));
       setDocuments(await getDocuments());
       form.reset();
+      setFileName('');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Не удалось загрузить документ');
     } finally {
@@ -199,10 +203,34 @@ export default function Documents() {
             Конец периода
             <input type="month" name="periodTo" />
           </label>
-          <label className={styles.field}>
-            PDF-файл до 20 МБ
-            <input type="file" name="file" accept="application/pdf,.pdf" required />
-          </label>
+          <div className={`${styles.field} ${styles.fileField}`}>
+            <label htmlFor="document-file">PDF-файл до 20 МБ</label>
+            <div className={styles.filePicker}>
+              <input
+                ref={fileInput}
+                id="document-file"
+                className="visually-hidden"
+                type="file"
+                name="file"
+                accept="application/pdf,.pdf"
+                required
+                onChange={(e) => setFileName(e.target.files?.[0]?.name ?? '')}
+              />
+              <Button
+                type="button"
+                view="secondary"
+                size={48}
+                className={styles.fileButton}
+                leftAddons={<DocumentAddMIcon />}
+                onClick={() => fileInput.current?.click()}
+              >
+                {fileName ? 'Выбрать другой файл' : 'Выбрать файл'}
+              </Button>
+              <span className={fileName ? styles.fileName : styles.fileEmpty}>
+                {fileName || 'Файл не выбран'}
+              </span>
+            </div>
+          </div>
         </div>
         <Button type="submit" view="accent" size={48} loading={busy} disabled={busy}>
           {busy ? 'Загружаем…' : 'Сохранить в библиотеку'}
