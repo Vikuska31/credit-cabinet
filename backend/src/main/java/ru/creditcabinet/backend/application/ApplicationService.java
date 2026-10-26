@@ -187,11 +187,13 @@ public class ApplicationService {
             throw ApiException.validation("selectedKind", "Для этого срока второго варианта нет. Выберите расчёт «По вашему запросу»");
         }
         if (!a.consent()) throw ApiException.validation("consent", "Подтвердите согласие на обработку заявки");
+        List<FieldError> missing = new ArrayList<>();
         for (DocumentCheck c : buildChecks(a)) {
             if (c.blocksSubmit() && c.attached() == null) {
-                throw ApiException.validation("documents", "Не приложен документ: " + c.type().title());
+                missing.add(new FieldError("documents", "Не приложен документ: " + c.type().title()));
             }
         }
+        if (!missing.isEmpty()) throw ApiException.validation(missing);
 
         a.setSubmittedOffer(offer);
         a.setSubmittedAt(clock.instant());

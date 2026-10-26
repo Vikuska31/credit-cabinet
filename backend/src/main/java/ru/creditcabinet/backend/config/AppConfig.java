@@ -42,7 +42,14 @@ import java.time.Clock;
 @Configuration
 public class AppConfig {
 
-    @Bean Clock clock() { return Clock.systemUTC(); }
+    /**
+     * APP_TODAY=2026-10-26 фиксирует «сегодня» для демо: сводки в демопрофилях покрывают июль–сентябрь,
+     * а правило требует три последних полных месяца, поэтому с 1 ноября без этого демо ООО перестанет одобряться.
+     */
+    @Bean Clock clock(@Value("${app.today:}") String today) {
+        if (today.isBlank()) return Clock.systemUTC();
+        return Clock.fixed(java.time.LocalDate.parse(today).atTime(12, 0).toInstant(java.time.ZoneOffset.UTC), java.time.ZoneOffset.UTC);
+    }
 
     @Bean JsonMapper jsonMapper() { return JsonMapper.builder().build(); }
 
