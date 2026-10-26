@@ -1,6 +1,7 @@
 package ru.creditcabinet.backend.decision;
 
 import ru.creditcabinet.backend.bank.BankData;
+import ru.creditcabinet.backend.common.Money;
 import ru.creditcabinet.backend.bank.BankData.Completeness;
 import ru.creditcabinet.backend.decision.Decision.Change;
 import ru.creditcabinet.backend.decision.Decision.ClarificationRequest;
@@ -64,7 +65,7 @@ public class DecisionEngine {
             if (Boolean.TRUE.equals(od.current())) {
                 rejects.add(new Reason("current_overdue", "Есть текущая просрочка по кредиту (%s дн., источник: %s на %s)"
                         .formatted(od.currentDays() == null ? "срок неизвестен" : od.currentDays(),
-                                od.meta().source(), od.meta().asOf())));
+                                od.meta().source(), Money.format(od.meta().asOf()))));
             }
             if (od.maxDays() != null && od.maxDays() > t.maxPastOverdueDays()) {
                 rejects.add(new Reason("past_overdue",
@@ -106,14 +107,15 @@ public class DecisionEngine {
         if (existing.add(selected.monthlyPayment()).compareTo(limit) <= 0) {
             Reason ok = new Reason("approved", "Долговая нагрузка %s при допустимых %s. Среднемесячные поступления %s ₽, действующие платежи %s ₽ (источник: %s на %s)."
                     .formatted(percent(existing.add(selected.monthlyPayment()), avgInflow), percent(t.maxDebtLoadRatio().multiply(avgInflow), avgInflow),
-                            avgInflow, existing, inflows.meta().source(), inflows.meta().asOf()));
+                            Money.format(avgInflow), Money.format(existing), inflows.meta().source(),
+                            Money.format(inflows.meta().asOf())));
             return result(Outcome.APPROVED, List.of(ok), List.of(), selected, List.of());
         }
 
         BigDecimal room = limit.subtract(existing);
         Reason overload = new Reason("debt_load_high",
                 "Долговая нагрузка с новым платежом %s ₽ составила бы %s при допустимых %s"
-                        .formatted(selected.monthlyPayment(), percent(existing.add(selected.monthlyPayment()), avgInflow),
+                        .formatted(Money.format(selected.monthlyPayment()), percent(existing.add(selected.monthlyPayment()), avgInflow),
                                 percent(limit, avgInflow)));
 
         // 3а. Тот же размер на более длинный срок
@@ -151,7 +153,7 @@ public class DecisionEngine {
     }
 
     private static String percent(BigDecimal part, BigDecimal whole) {
-        return part.multiply(BigDecimal.valueOf(100)).divide(whole, 1, RoundingMode.HALF_UP) + "%";
+        return part.multiply(BigDecimal.valueOf(100)).divide(whole, 1, RoundingMode.HALF_UP).toPlainString().replace('.', ',') + "%";
     }
 
     private Decision result(Outcome outcome, List<Reason> reasons, List<ClarificationRequest> requests,
