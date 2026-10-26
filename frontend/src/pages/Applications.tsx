@@ -1,321 +1,239 @@
-import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Button } from '@alfalab/core-components/button';
-import { Modal } from '@alfalab/core-components/modal';
-import { Segment, SegmentedControl } from '@alfalab/core-components/segmented-control';
-import { Spinner } from '@alfalab/core-components/spinner';
-import { Tag } from '@alfalab/core-components/tag';
-import { Typography } from '@alfalab/core-components/typography';
+import { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { applicationAction, getApplication } from '../api/applications';
+import { fetchApi } from '../api/client';
+import { getDocuments } from '../api/catalog';
 import { useApp } from '../context/AppContext';
-import { APPLICATION_STATUS_LABELS, type Application, type ApplicationStatus } from '../types';
-import { formatMonths, formatRub } from '../utils/format';
-import { STATUS_TONE, isFinalStatus } from '../utils/status';
-import styles from './Applications.module.css';
-
-/** Телефон банка — заглушка, замените на актуальный контакт. */
-const BANK_PHONE = '88002002000';
-
-const MOCK_APPLICATIONS: Application[] = [
-  {
-    id: 'DEMO-003',
-    product: 'Кредит на оборудование',
-    purpose: 'Оборудование',
-    amount: 1_500_000,
-    months: 24,
-    status: 'NEEDS_CLARIFICATION',
-    createdAt: '2026-10-21T10:15:00',
-  },
-  {
-    id: 'DEMO-002',
-    product: 'Кредит на развитие бизнеса',
-    purpose: 'Развитие',
-    amount: 750_000,
-    months: 12,
-    status: 'APPROVED',
-    createdAt: '2026-10-12T14:40:00',
-  },
-  {
-    id: 'DEMO-001',
-    product: 'Кредит на развитие бизнеса',
-    purpose: 'Реклама',
-    amount: 300_000,
-    months: 6,
-    status: 'REJECTED',
-    createdAt: '2026-09-28T09:05:00',
-  },
-];
-
-type Filter = 'all' | 'active' | 'done';
-
-const NOW_TEXT: Record<ApplicationStatus, string> = {
-  DRAFT: 'Заявка ещё не отправлена. Продолжите оформление с того же шага.',
-  UNDER_REVIEW: 'Заявка отправлена. Банк проверяет данные.',
-  NEEDS_CLARIFICATION: 'Нужны дополнительные сведения или новый документ.',
-  CHECK_FAILED: 'Проверка не удалась. Обратитесь в поддержку.',
-  APPROVED: 'Предложение готово. Проверьте условия и подтвердите.',
-  COUNTER_OFFERED: 'Банк предложил другие условия. Сравните их с вашим запросом.',
-  REJECTED: 'Банк отказал по этой заявке. Можно посмотреть другие варианты.',
-  DECLINED_BY_CLIENT: 'Вы отказались от предложенных условий.',
-  ISSUED: 'Оформление завершено.',
-};
-
-const STAGES = ['Заявка отправлена', 'Проверка', 'Решение или уточнение', 'Принятие и выдача'] as const;
-type StageState = 'done' | 'current' | 'todo';
-
-/** Состояние каждого из четырёх этапов для данного статуса. */
-function getStages(status: ApplicationStatus): StageState[] {
-  switch (status) {
-    case 'DRAFT':
-      return ['todo', 'todo', 'todo', 'todo'];
-    case 'UNDER_REVIEW':
-      return ['done', 'current', 'todo', 'todo'];
-    case 'NEEDS_CLARIFICATION':
-    case 'CHECK_FAILED':
-    case 'COUNTER_OFFERED':
-    case 'APPROVED':
-    case 'REJECTED':
-    case 'DECLINED_BY_CLIENT':
-      return ['done', 'done', 'current', 'todo'];
-    case 'ISSUED':
-      return ['done', 'done', 'done', 'done'];
-    default:
-      return ['todo', 'todo', 'todo', 'todo']; // Для избежания ошибки TS2366
-  }
+import type { Application, DocumentRef } from '../types';
+import { APPLICATION_STATUS_LABELS } from '../types';
+import { formatRub } from '../utils/format';
+import { GOAL_LABELS, OFFER_FIELD_LABELS } from '../utils/goals';
+interface Inquiry {
+  id: string;
+  text: string;
+  status: string;
+  suggestedCategory: string | null;
+  employeeMessage: string | null;
 }
-
-const dateFormat = new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-function formatDate(value?: string): string {
-  const time = value ? Date.parse(value) : NaN;
-  return Number.isNaN(time) ? '—' : dateFormat.format(time);
-}
-const createdTime = (a: Application) => Date.parse(a.createdAt ?? '') || 0;
-
-function StatusTag({ status }: { status: ApplicationStatus }) {
-  return (
-    <Tag view="filled" size={32} className={`tag tag--${STATUS_TONE[status]}`}>
-      {APPLICATION_STATUS_LABELS[status]}
-    </Tag>
-  );
-}
-
-function ApplicationDetails({ app, onClose }: { app: Application; onClose: () => void }) {
-  const navigate = useNavigate();
-  const stages = getStages(app.status);
-
-  return (
-    <Modal open onClose={onClose} size={600}>
-      <Modal.Header hasCloser title={`Заявка № ${app.id}`} />
-      <Modal.Content>
-        <div className={styles.detailHead}>
-          <StatusTag status={app.status} />
-          <Typography.Text view="primary-large" weight="bold" tag="div">
-            {app.product}
-          </Typography.Text>
-        </div>
-
-        <dl className={styles.detailFacts}>
-          <div>
-            <dt>Сумма</dt>
-            <dd>{formatRub(app.amount)}</dd>
-          </div>
-          <div>
-            <dt>Срок</dt>
-            <dd>{formatMonths(app.months)}</dd>
-          </div>
-          <div>
-            <dt>Создана</dt>
-            <dd>{formatDate(app.createdAt)}</dd>
-          </div>
-        </dl>
-
-        <Typography.Title tag="h3" view="xsmall" weight="bold" style={{ marginBottom: 12 }}>
-          Этапы проверки
-        </Typography.Title>
-        <ol className={styles.stepper}>
-          {STAGES.map((title, i) => (
-            <li
-              key={title}
-              aria-current={stages[i] === 'current' ? 'step' : undefined}
-              className={`${styles.stage} ${
-                stages[i] === 'done'
-                  ? styles.stageDone
-                  : stages[i] === 'current'
-                    ? styles.stageCurrent
-                    : styles.stageTodo
-              }`}
-            >
-              <span className={styles.stageDot} aria-hidden="true">
-                {stages[i] === 'done' ? '✓' : i + 1}
-              </span>
-              <span className={styles.stageTitle}>{title}</span>
-            </li>
-          ))}
-        </ol>
-
-        <div className={styles.now}>
-          <Typography.Text view="secondary-small" color="secondary" tag="div">
-            Что происходит сейчас
-          </Typography.Text>
-          <Typography.Text view="primary-medium" tag="div">
-            {NOW_TEXT[app.status]}
-          </Typography.Text>
-        </div>
-      </Modal.Content>
-      <Modal.Footer>
-        <Button view="accent" size={48} href={`tel:${BANK_PHONE}`}>
-          Связаться с банком
-        </Button>
-        {app.status === 'DRAFT' && (
-          <Button view="outlined" size={48} onClick={() => navigate('/wizard')}>
-            Продолжить заявку
-          </Button>
-        )}
-        {(app.status === 'REJECTED' || app.status === 'DECLINED_BY_CLIENT') && (
-          <Button view="outlined" size={48} onClick={() => navigate('/credits')}>
-            Подобрать другой кредит
-          </Button>
-        )}
-        <Button view="secondary" size={48} onClick={onClose}>
-          Закрыть
-        </Button>
-      </Modal.Footer>
-    </Modal>
-  );
-}
-
 export default function Applications() {
-  const navigate = useNavigate();
-  const { applications, applicationsStatus } = useApp();
-  const [filter, setFilter] = useState<Filter>('all');
-  const [openId, setOpenId] = useState<string | null>(null);
-  
-  const loading = applicationsStatus === 'idle' || applicationsStatus === 'loading';
-  // Бэкенд недоступен — показываем демонстрационные заявки, чтобы экран не пустовал.
-  const usingMock = applicationsStatus === 'error';
-  const source = usingMock ? MOCK_APPLICATIONS : applications;
-
-  const sorted = useMemo(() => [...source].sort((a, b) => createdTime(b) - createdTime(a)), [source]);
-  const counts = useMemo(
-    () => ({
-      all: sorted.length,
-      active: sorted.filter((a) => !isFinalStatus(a.status)).length,
-      done: sorted.filter((a) => isFinalStatus(a.status)).length,
-    }),
-    [sorted],
-  );
-  const visible = useMemo(
-    () =>
-      sorted.filter((a) =>
-        filter === 'all' ? true : filter === 'active' ? !isFinalStatus(a.status) : isFinalStatus(a.status),
-      ),
-    [sorted, filter],
-  );
-  const opened = sorted.find((a) => a.id === openId) ?? null;
-
+  const { applications, applicationsStatus, applicationsError, refreshApplications } = useApp();
+  const [params, setParams] = useSearchParams();
+  const id = params.get('applicationId');
+  const [opened, setOpened] = useState<Application | null>(null);
+  const [error, setError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [library, setLibrary] = useState<DocumentRef[]>([]);
+  const [attached, setAttached] = useState<string[]>([]);
+  const [inquiries, setInquiries] = useState<Inquiry[]>([]);
+  useEffect(() => {
+    let active = true;
+    if (id)
+      Promise.all([getApplication(id), getDocuments()])
+        .then(([a, d]) => {
+          if (active) {
+            setOpened(a);
+            setLibrary(d);
+            setAttached(a.attachedDocumentIds);
+          }
+        })
+        .catch((e) => {
+          if (active) {
+            setOpened(null);
+            setError(e.message);
+          }
+        });
+    return () => {
+      active = false;
+    };
+  }, [id]);
+  useEffect(() => {
+    fetchApi<Inquiry[]>('/api/goal-inquiries')
+      .then(setInquiries)
+      .catch(() => undefined);
+  }, []);
+  const act = async (action: Parameters<typeof applicationAction>[1], body?: object) => {
+    if (!id || busy) return;
+    setBusy(true);
+    setError('');
+    try {
+      const a = await applicationAction(id, action, body);
+      setOpened(a);
+      setAttached(a.attachedDocumentIds);
+      await refreshApplications();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Ошибка операции');
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
     <>
       <div className="page-head">
-        <Typography.Text view="secondary-small" color="secondary" className="eyebrow">
-          Заявки
-        </Typography.Text>
-        <Typography.Title tag="h1" view="large" weight="bold">
-          Мои заявки
-        </Typography.Title>
-        <Typography.Text view="primary-medium" color="secondary" tag="div">
-          Здесь показаны фактический этап, история и следующее действие.
-        </Typography.Text>
+        <h1>Мои заявки</h1>
+        <Link className="cc-button" to="/credits">
+          Подобрать кредит
+        </Link>
       </div>
-
-      {loading && (
-        <div className={styles.loader}>
-          <Spinner visible preset={24} />
-        </div>
+      {(error || applicationsError) && (
+        <p role="alert" className="cc-error">
+          {error || applicationsError}
+        </p>
       )}
-
-      {!loading && usingMock && (
-        <Typography.Text view="primary-small" tag="div" className={styles.demoNote}>
-          Не удалось загрузить заявки с сервера — показаны демонстрационные данные.
-        </Typography.Text>
-      )}
-
-      {!loading && sorted.length === 0 && (
-        <div className={styles.empty}>
-          <div className={styles.emptyIcon} aria-hidden="true">
-            ▤
-          </div>
-          <Typography.Title tag="h2" view="small" weight="bold">
-            Заявок пока нет
-          </Typography.Title>
-          <Typography.Text view="primary-medium" color="secondary" tag="div" className={styles.emptyText}>
-            Подбор кредита доступен без оформления. Заявка появится здесь, как только вы её начнёте.
-          </Typography.Text>
-          <Button view="accent" size={48} onClick={() => navigate('/credits')}>
-            Подобрать кредит
-          </Button>
-        </div>
-      )}
-
-      {!loading && sorted.length > 0 && (
-        <>
-          <div className={styles.toolbar}>
-            <SegmentedControl
-              size={40}
-              className={styles.filter}
-              selectedId={filter}
-              onChange={(id) => setFilter(id as Filter)}
+      {applicationsStatus === 'loading' && <p>Загрузка…</p>}
+      {applications.length === 0 && applicationsStatus === 'success' && <p>Заявок пока нет.</p>}
+      <div className="cc-list">
+        {applications.map((a) => (
+          <article className="cc-card" key={a.id}>
+            <span className="cc-badge">{APPLICATION_STATUS_LABELS[a.status]}</span>
+            <h2>Заявка № {a.number}</h2>
+            <p>
+              {a.amount == null ? 'Сумма не указана' : formatRub(a.amount)} · {a.termMonths ?? '—'}{' '}
+              мес.
+            </p>
+            <button
+              className="cc-button secondary"
+              onClick={() => {
+                setError('');
+                setOpened(null);
+                setParams({ applicationId: a.id });
+              }}
             >
-              <Segment id="all" title={`Все · ${counts.all}`} />
-              <Segment id="active" title={`В работе · ${counts.active}`} />
-              <Segment id="done" title={`Завершённые · ${counts.done}`} />
-            </SegmentedControl>
-            <Button view="secondary" size={40} onClick={() => navigate('/credits')}>
-              Новая заявка
-            </Button>
+              Подробнее
+            </button>
+          </article>
+        ))}
+      </div>
+      {id && opened?.id === id && (
+        <section className="cc-card cc-detail">
+          <div className="cc-actions">
+            <h2>Заявка № {opened.number}</h2>
+            <button
+            className="cc-button secondary"
+              onClick={() => {
+                setOpened(null);
+                setParams({});
+              }}
+            >
+              Закрыть
+            </button>
           </div>
-
-          {visible.length === 0 ? (
-            <div className={styles.empty}>
-              <Typography.Text view="primary-medium" color="secondary" tag="div">
-                В этой категории заявок нет.
-              </Typography.Text>
-              <Button view="secondary" size={40} onClick={() => setFilter('all')}>
-                Показать все
-              </Button>
-            </div>
-          ) : (
-            <ul className={styles.list} style={{ margin: 0, padding: 0, listStyle: 'none' }}>
-              {visible.map((app) => (
-                <li key={app.id}>
-                  <article className={styles.card}>
-                    <div className={styles.cardMain}>
-                      <StatusTag status={app.status} />
-                      <div className={styles.cardTitle}>{app.product}</div>
-                      <Typography.Text view="secondary-small" color="secondary">
-                        Заявка № {app.id}
-                      </Typography.Text>
-                    </div>
-                    <dl className={`${styles.fact} ${styles.facts}`}>
-                      <dt>Сумма и срок</dt>
-                      <dd>
-                        {formatRub(app.amount)} · {formatMonths(app.months)}
-                      </dd>
-                    </dl>
-                    <dl className={`${styles.fact} ${styles.facts}`}>
-                      <dt>Создана</dt>
-                      <dd>{formatDate(app.createdAt)}</dd>
-                    </dl>
-                    <Button view="secondary" size={40} onClick={() => setOpenId(app.id)}>
-                      Подробнее →
-                    </Button>
-                  </article>
-                </li>
-              ))}
-            </ul>
+          <p>{opened.statusTitle}</p>
+          {opened.status === 'DRAFT' && (
+            <Link className="cc-button" to={'/wizard?applicationId=' + id}>
+              Продолжить черновик
+            </Link>
           )}
-        </>
+          {opened.decision?.reasons.map((r) => (
+            <p key={r.code}>{r.text}</p>
+          ))}
+          {opened.finalOffer && (
+            <dl className="cc-facts">
+              <dt>Сумма</dt>
+              <dd>{formatRub(opened.finalOffer.amount)}</dd>
+              <dt>Срок</dt>
+              <dd>{opened.finalOffer.termMonths} мес.</dd>
+              <dt>Ставка</dt>
+              <dd>{opened.finalOffer.annualRatePercent}%</dd>
+              <dt>Платёж</dt>
+              <dd>{formatRub(opened.finalOffer.monthlyPayment)}</dd>
+            </dl>
+          )}
+          {opened.decision?.changes.map((c) => (
+            <p key={c.field}>
+              {OFFER_FIELD_LABELS[c.field] || 'Условие'}: {c.requested} → {c.offered}
+            </p>
+          ))}
+          {['APPROVED', 'COUNTER_OFFERED'].includes(opened.status) && (
+            <div className="cc-actions">
+              <button className="cc-button" disabled={busy} onClick={() => void act('accept')}>
+                Принять условия — демо
+              </button>
+              <button
+                className="cc-button secondary"
+                disabled={busy}
+                onClick={() => void act('decline')}
+              >
+                Отказаться от предложения
+              </button>
+            </div>
+          )}
+          {opened.status === 'CHECK_FAILED' && (
+            <button className="cc-button" disabled={busy} onClick={() => void act('retry-check')}>
+              Повторить проверку
+            </button>
+          )}
+          {opened.status === 'NEEDS_CLARIFICATION' && (
+            <div className="cc-form">
+              <h3>Нужно дополнить</h3>
+              {opened.openRequests.map((r, i) => (
+                <p key={i}>{r.message}</p>
+              ))}
+              <Link to="/documents" target="_blank" rel="noreferrer">
+                Загрузить документ
+              </Link>
+              <button
+                className="cc-button secondary"
+                onClick={() =>
+                  getDocuments()
+                    .then(setLibrary)
+                    .catch((e) => setError(e.message))
+                }
+              >
+                Обновить библиотеку
+              </button>
+              {library.map((d) => (
+                <label key={d.id}>
+                  <input
+                    type="checkbox"
+                    checked={attached.includes(d.id)}
+                    onChange={() =>
+                      setAttached((old) =>
+                        old.includes(d.id) ? old.filter((x) => x !== d.id) : [...old, d.id],
+                      )
+                    }
+                  />
+                  {d.title}
+                </label>
+              ))}
+              <button
+                className="cc-button"
+                disabled={busy}
+                onClick={() =>
+                  void act('clarification-response', { attachedDocumentIds: attached })
+                }
+              >
+                Отправить дополнение
+              </button>
+            </div>
+          )}
+          <h3>История</h3>
+          {opened.history.map((h, i) => (
+            <p key={i}>
+              <small>{new Date(h.at).toLocaleString('ru-RU')}</small> · {h.message}
+            </p>
+          ))}
+        </section>
       )}
-
-      {opened && <ApplicationDetails app={opened} onClose={() => setOpenId(null)} />}
+      {inquiries.length > 0 && (
+        <section className="cc-card">
+          <h2>Вопросы по цели</h2>
+          {inquiries.map((q) => (
+            <div key={q.id}>
+              <p>
+                {q.text} · {q.status === 'OPEN' ? 'Ожидает ответа' : 'Получен ответ'}
+              </p>
+              {q.employeeMessage && <p>{q.employeeMessage}</p>}
+              {q.suggestedCategory && (
+                <p>
+                  Предложенная категория:{' '}
+                  {GOAL_LABELS[q.suggestedCategory] || 'уточните у сотрудника'}. Выберите её в
+                  подборе.
+                </p>
+              )}
+            </div>
+          ))}
+        </section>
+      )}
     </>
   );
 }

@@ -1,6 +1,7 @@
 package ru.creditcabinet.backend.config;
 
 import org.springframework.context.annotation.Configuration;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.MethodParameter;
 import org.springframework.web.bind.support.WebDataBinderFactory;
 import org.springframework.web.context.request.NativeWebRequest;
@@ -18,8 +19,12 @@ import java.util.List;
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
     private final AuthService auth;
+    private final String[] allowedOrigins;
 
-    public WebConfig(AuthService auth) { this.auth = auth; }
+    public WebConfig(AuthService auth, @Value("${app.cors-origins}") String origins) {
+        this.auth = auth;
+        this.allowedOrigins = java.util.Arrays.stream(origins.split(",")).map(String::trim).toArray(String[]::new);
+    }
 
     @Override
     public void addArgumentResolvers(List<HandlerMethodArgumentResolver> resolvers) {
@@ -42,7 +47,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins("http://localhost:3000", "http://localhost:5173")
+                .allowedOrigins(allowedOrigins)
                 .allowedMethods("GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*");
     }

@@ -4,6 +4,7 @@ import { Button } from '@alfalab/core-components/button';
 import { Typography } from '@alfalab/core-components/typography';
 import { useApp } from '../context/AppContext';
 import { getInitials } from '../utils/format';
+import AssistantPanel from './ai/AssistantPanel';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Главная', icon: '⌂', end: true },
@@ -122,6 +123,7 @@ export default function Layout() {
 
         <main className="content">
           <Outlet />
+          <AssistantPanel />
         </main>
       </div>
     </div>

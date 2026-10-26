@@ -1,51 +1,60 @@
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = (import.meta.env.VITE_API_URL ?? '').replace(/\/$/, '');
 const TOKEN_KEY = 'credit-cabinet:token';
-
+export interface FieldError {
+  field: string;
+  message: string;
+}
 export class ApiError extends Error {
   status: number;
-  constructor(status: number, message: string) {
+  fieldErrors: FieldError[];
+  constructor(status: number, message: string, fields: FieldError[] = []) {
     super(message);
-    this.status = status;
     this.name = 'ApiError';
+    this.status = status;
+    this.fieldErrors = fields;
   }
 }
-
-export function getToken(): string | null {
+export function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
-
-export function setToken(token: string | null): void {
+export function setToken(token: string | null) {
   if (token) localStorage.setItem(TOKEN_KEY, token);
   else localStorage.removeItem(TOKEN_KEY);
 }
-
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const headers = new Headers(options.headers);
+  if (!(options.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   const token = getToken();
-  const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
-    ...(options.headers as Record<string, string>),
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
-
+  if (token) headers.set('Authorization', 'Bearer ' + token);
+  const response = await fetch(BASE_URL + endpoint, { ...options, headers });
+  const text = await response.text();
   if (!response.ok) {
-    let message = `Ошибка ${response.status}`;
+    let message = 'Ошибка ' + response.status;
+    let fields: FieldError[] = [];
     try {
-      const data = await response.json();
-      if (data.message) message = data.message;
+      const data = JSON.parse(text);
+      message = data.message || message;
+      fields = data.fieldErrors || [];
     } catch {
-      // ignore
+      /* Non-JSON error. */
     }
-    throw new ApiError(response.status, message);
+    if (response.status === 401) {
+      setToken(null);
+      window.dispatchEvent(new Event('session-expired'));
+    }
+    throw new ApiError(response.status, message, fields);
   }
-
-  if (response.status === 204) return {} as T;
-  return response.json();
+  return (text ? JSON.parse(text) : undefined) as T;
+}
+export async function downloadDocument(id: string) {
+  const r = await fetch(BASE_URL + '/api/documents/' + encodeURIComponent(id) + '/file', {
+    headers: { Authorization: 'Bearer ' + (getToken() || '') },
+  });
+  if (!r.ok) throw new ApiError(r.status, 'Не удалось скачать файл');
+  const url = URL.createObjectURL(await r.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'document.pdf';
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

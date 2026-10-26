@@ -17,6 +17,14 @@ build/
 __pycache__/
 *.pyc
 .venv/
+.pytest_cache/
+uploads/
+test-results/
+playwright-report/
+.run/
+# Local JVM crash reports from diagnostic runs.
+/backend/hs_err_pid*.log
+/backend/replay_pid*.log
 # веса моделей
 *.gguf
 *.safetensors

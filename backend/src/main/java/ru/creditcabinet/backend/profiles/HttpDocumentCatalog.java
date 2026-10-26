@@ -27,10 +27,14 @@ public class HttpDocumentCatalog implements DocumentCatalog {
     private final RestClient client;
 
     public HttpDocumentCatalog(String baseUrl) {
+        this(baseUrl, "");
+    }
+
+    public HttpDocumentCatalog(String baseUrl, String token) {
         SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
         factory.setConnectTimeout(Duration.ofSeconds(3));
         factory.setReadTimeout(Duration.ofSeconds(10));
-        this.client = RestClient.builder().baseUrl(baseUrl).requestFactory(factory).build();
+        this.client = RestClient.builder().baseUrl(baseUrl).defaultHeader("Authorization", "Bearer " + token).requestFactory(factory).build();
     }
 
     @Override public List<DocumentRef> listByCompany(String inn) {

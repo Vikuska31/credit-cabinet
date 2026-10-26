@@ -30,9 +30,8 @@ body,
   min-height: 100%;
 }
 
-/* Только десктоп: макет рассчитан на экраны от 1280px */
 body {
-  min-width: 960px;
+  min-width: 320px;
   margin: 0;
   background: var(--bg);
   color: var(--ink);
