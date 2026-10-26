@@ -48,6 +48,23 @@
 .cc-goals input {
   margin-right: 10px;
 }
+
+.cc-form label:has(input[type='checkbox']),
+.cc-goals label,
+.cc-other label:has(input[type='checkbox']) {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+.cc-form input[type='checkbox'],
+.cc-goals input[type='checkbox'] {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: #ef3124;
+  flex: none;
+}
 .cc-button {
   display: inline-flex;
   align-items: center;
@@ -64,8 +81,9 @@
   text-align: center;
 }
 .cc-button.secondary {
-  background: #f0f1f3;
-  color: #18202e;
+  background: #fff;
+  color: #ef3124;
+  border-color: #ef3124;
 }
 .cc-button:disabled {
   opacity: 0.5;
@@ -284,4 +302,10 @@ select:focus-visible {
   .cc-card {
     min-width: 0;
   }
+}
+.cc-button.compact {
+  min-height: 32px;
+  padding: 4px 12px;
+  border-radius: 8px;
+  vertical-align: middle;
 }

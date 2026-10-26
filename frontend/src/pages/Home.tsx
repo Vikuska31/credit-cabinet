@@ -49,7 +49,7 @@ export default function Home() {
           {applicationsError && (
             <>
               <p role="alert">{applicationsError}</p>
-              <button onClick={() => void refreshApplications()}>Повторить</button>
+              <button className="cc-button secondary" onClick={() => void refreshApplications()}>Повторить</button>
             </>
           )}
         </section>

@@ -264,6 +264,7 @@ function WizardForm() {
               , затем{' '}
               <button
                 type="button"
+                className="cc-button secondary compact"
                 onClick={() =>
                   void run(async () => {
                     setLibrary(await getDocuments());

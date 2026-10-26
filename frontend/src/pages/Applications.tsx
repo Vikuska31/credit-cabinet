@@ -108,6 +108,7 @@ export default function Applications() {
           <div className="cc-actions">
             <h2>Заявка № {opened.number}</h2>
             <button
+            className="cc-button secondary"
               onClick={() => {
                 setOpened(null);
                 setParams({});
@@ -171,6 +172,7 @@ export default function Applications() {
                 Загрузить документ
               </Link>
               <button
+                className="cc-button secondary"
                 onClick={() =>
                   getDocuments()
                     .then(setLibrary)
