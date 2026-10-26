@@ -177,3 +177,56 @@
 .filter {
   width: 480px;
 }
+
+/* Блоки подробностей, подключённые к серверу */
+.error {
+  margin: 0 0 16px;
+  color: #c72720;
+}
+.block {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+}
+.block h3 {
+  margin: 0;
+}
+.reason {
+  margin: 0;
+  color: #16181d;
+}
+.change {
+  margin: 0;
+  color: #6b7280;
+}
+.actionsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 16px 0;
+}
+.library {
+  display: grid;
+  gap: 8px;
+}
+.history {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+.history time {
+  color: #6b7280;
+}
+.inquiries {
+  margin-top: 24px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  border-radius: 20px;
+}
+.inquiries h2 {
+  margin: 0 0 12px;
+}

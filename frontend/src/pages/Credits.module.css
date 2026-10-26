@@ -181,3 +181,36 @@
 .warn {
   color: #c72720;
 }
+/* Нативный чекбокс прозрачный и растянут на всю плитку: доступен с клавиатуры, экранным читалкам и принимает клики */
+.purposeInput {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.purpose {
+  position: relative;
+}
+.purpose:focus-within {
+  outline: 3px solid #0055ff88;
+  outline-offset: 2px;
+}
+.purposeHint {
+  font-size: 13px;
+  line-height: 18px;
+  color: #6b7280;
+}
+.error {
+  margin: 0 0 16px;
+  color: #c72720;
+}
+.offerMeta {
+  margin: 0;
+  color: #6b7280;
+}
+.otherBox {
+  margin-top: 16px;
+}
