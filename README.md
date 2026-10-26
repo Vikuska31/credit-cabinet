@@ -110,3 +110,16 @@ docker compose ps
 
 Тег: `v1.0-submission`
 Commit hash: e216c4eb3fea16266706d05e5987f33ada26b8bc
+
+
+## Команда
+
+Команда A05, трек «Умный кредитный кабинет предпринимателя».
+
+| Участник | Роль | Telegram |
+|---|---|---|
+| Пупина Виктория | Капитан команды, Backend-разработчик | [@frankii_z](https://t.me/frankii_z) |
+| Люлин Фёдор | Backend-разработчик | [@fedor_932](https://t.me/fedor_932) |
+| Горлова Елизавета | Frontend-разработчик | [@lizzushkaa](https://t.me/lizzushkaa) |
+| Кириллов Егор | Data Scientist / ML-engineer | [@egorbmw530](https://t.me/egorbmw530) |
+| Карпунькина Елена | Product / UX / Business analyst | [@kilve](https://t.me/kilve) |
