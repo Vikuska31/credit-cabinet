@@ -57,7 +57,7 @@ export default function Documents() {
           >
             Скачать файл
           </button>
-          <button onClick={() => setParams({})}>Закрыть</button>
+          <button className="cc-button secondary" onClick={() => setParams({})}>Закрыть</button>
         </section>
       )}
       <div className="cc-grid">
