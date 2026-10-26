@@ -95,7 +95,7 @@ export default function Staff() {
                   size={32}
                   onClick={() => void run(async () => setSelected(await getApplication(a.id)))}
                 >
-                  № {a.number} · {a.companyInn} · {a.statusTitle}
+                  № {a.number} · {a.companyInn}
                 </Button>
                 <Tag view="filled" size={32} className={`tag tag--${STATUS_TONE[a.status]}`}>
                   {a.statusTitle}
