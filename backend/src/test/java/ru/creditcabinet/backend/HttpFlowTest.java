@@ -41,6 +41,13 @@ class HttpFlowTest {
     }
 
     @Test
+    void staffNameIsNotGarbled() throws Exception {
+        String body = body(mvc.perform(get("/api/me").header("Authorization", "Bearer " + staffToken()))
+                .andExpect(status().isOk()).andReturn());
+        assertTrue(body.contains("Сотрудник банка (демо)"), "имя сотрудника читается без искажений: " + body);
+    }
+
+    @Test
     void requiresLogin() throws Exception {
         mvc.perform(get("/api/applications")).andExpect(status().isUnauthorized());
         mvc.perform(post("/api/auth/login").contentType(MediaType.APPLICATION_JSON)

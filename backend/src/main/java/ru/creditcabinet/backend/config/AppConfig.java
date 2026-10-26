@@ -59,7 +59,7 @@ public class AppConfig {
                                               @Value("${app.profiles-file}") String file,
                                               @Value("${app.staff.login}") String staffLogin,
                                               @Value("${app.staff.password}") String staffPassword,
-                                              @Value("${app.staff.full-name}") String staffName) {
+                                              @Value("${app.staff.full-name:Сотрудник банка (демо)}") String staffName) {
         ProfilesDirectory dir = new ProfilesDirectory(Path.of(file), json, staffLogin, staffPassword, staffName);
         dir.registerAccounts(auth);
         return dir;
