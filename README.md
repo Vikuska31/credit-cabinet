@@ -109,4 +109,4 @@ docker compose ps
 ## Версия для проверки
 
 Тег: `v1.0-submission`
-Commit hash: _заполняется в момент сдачи_
+Commit hash: e216c4eb3fea16266706d05e5987f33ada26b8bc
