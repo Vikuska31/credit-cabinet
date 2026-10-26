@@ -35,6 +35,7 @@ cd backend
 | `PROFILES_FILE` | `../data/demo-profiles/profiles.json` | Демопрофили Вики (в контейнере `/data/demo-profiles/profiles.json`) |
 | `MOCKS_URL` | пусто | Моки банковских источников, например `http://mocks:8001`. Пусто = читать `bank_data` из `profiles.json` |
 | `DOCUMENTS_URL` | пусто | `documents-service`. Пусто = документы из `profiles.json` |
+| `APP_TODAY` | пусто | Зафиксировать «сегодня» для демо (`2026-10-26`). Без этого с 1 ноября демо-сводки (июль–сентябрь) перестанут считаться актуальными, и ООО будет получать запрос уточнения вместо одобрения |
 | `STAFF_LOGIN`, `STAFF_PASSWORD` | employee, employee1234 | Запасной сотрудник, если в `profiles.json` нет секции `employees` |
 
 ### Контейнер

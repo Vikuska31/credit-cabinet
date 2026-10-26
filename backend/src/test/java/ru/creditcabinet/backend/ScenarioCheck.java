@@ -121,6 +121,10 @@ public class ScenarioCheck {
         apps.updateDraft(ooo, d5.id(), new DraftUpdate(Set.of(LoanGoal.EQUIPMENT), null, null, new BigDecimal("800000"), 12,
                 LoanOffer.Kind.REQUESTED, null, null, null, true, 4));
         check(expectError(() -> apps.submit(ooo, d5.id())).fieldErrors().get(0).field().equals("documents"), "оборудование без документа не отправить");
+        ApplicationView d5r = apps.createDraft(ooo);
+        apps.updateDraft(ooo, d5r.id(), new DraftUpdate(Set.of(LoanGoal.REPAIR), null, null, new BigDecimal("800000"), 12,
+                LoanOffer.Kind.REQUESTED, null, null, null, true, 4));
+        check(expectError(() -> apps.submit(ooo, d5r.id())).fieldErrors().size() == 2, "ремонт без документов: названы оба недостающих (смета и помещение)");
 
         // --- «Другое» ---
         ApplicationView d6 = apps.createDraft(ooo);
