@@ -51,10 +51,14 @@ test('real server calculation, draft restoration, submission and disabled AI', a
   await page.getByRole('button', { name: 'Приложить найденные документы' }).click();
   await expect(page.getByText(/Приложен:/)).toBeVisible();
   await page.getByRole('button', { name: 'Далее', exact: true }).click();
-  await page.getByLabel('Я подтверждаю данные', { exact: false }).check();
+  // Чекбокс Альфа-Банка: настоящий input перекрыт «коробочкой», человек кликает по тексту
+  await page.getByText('Я подтверждаю данные', { exact: false }).click();
+  await expect(page.getByLabel('Я подтверждаю данные', { exact: false })).toBeChecked();
   await page.getByRole('button', { name: 'Отправить заявку', exact: true }).click();
   await expect(page).toHaveURL(/applications\?applicationId=/);
   await expect(page.getByRole('button', { name: 'Принять условия — демо' })).toBeVisible();
+  // Карточка заявки открыта поверх страницы — закрываем её, как это сделал бы человек
+  await page.getByRole('button', { name: 'Закрыть', exact: true }).last().click();
   await page.getByText('Помощник по кредиту', { exact: true }).click();
   await expect(page.getByText('Помощник отключён.', { exact: false })).toBeVisible();
 });
@@ -188,7 +192,7 @@ test('assistant never writes applications and applies fields only on click', asy
   await page.getByLabel('Ваше сообщение').fill('Оборудование пекарни');
   await page.getByRole('button', { name: 'Отправить', exact: true }).click();
   await page.getByRole('button', { name: 'Начать подбор', exact: true }).click();
-  await expect(page.getByLabel('Сумма, ₽', { exact: true })).toHaveValue('1500000.00');
+  await expect(page.getByLabel('Сумма, ₽', { exact: true })).toHaveValue('1500000');
   await expect(page.getByLabel('Оборудование', { exact: false })).toBeChecked();
   expect(writes).toBe(0);
 });

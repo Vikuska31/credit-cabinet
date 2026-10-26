@@ -386,3 +386,27 @@ h2 {
 .login__form h2 {
   margin: 0;
 }
+
+/* Демо-профили на экране входа (раньше были inline-стили) */
+.login__demo {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e8e9ec;
+}
+.login__demo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+/* Скрыто визуально, но доступно экранным читалкам */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}

@@ -23,3 +23,20 @@ export function getInitials(name?: string): string {
     .toUpperCase()
     .slice(0, 2);
 }
+
+/** Значение изменённого условия из ответа банка («3000000» → «3 000 000,00 ₽», «24» → «24 месяца»). */
+export function formatOfferValue(field: string, value: string): string {
+  const number = Number(value);
+  if (!Number.isFinite(number)) return value;
+  switch (field) {
+    case 'amount':
+    case 'monthlyPayment':
+      return formatRub(number);
+    case 'termMonths':
+      return formatMonths(number);
+    case 'annualRatePercent':
+      return `${String(number).replace('.', ',')}%`;
+    default:
+      return value;
+  }
+}

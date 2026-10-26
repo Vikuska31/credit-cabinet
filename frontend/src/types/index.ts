@@ -108,6 +108,12 @@ export interface Application {
   } | null;
   openRequests: { field: string; documentType: string | null; message: string }[];
   history: { at: string; actor: string; type: string; message: string }[];
+  // Удобные поля, которые бэкенд добавляет для списков
+  product?: string;
+  months?: number | null;
+  purpose?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export type DraftUpdate = Partial<
   Pick<

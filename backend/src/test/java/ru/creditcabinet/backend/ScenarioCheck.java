@@ -81,6 +81,9 @@ public class ScenarioCheck {
                 YearMonth.of(2026, 7), YearMonth.of(2026, 9), 1, Instant.parse("2026-10-24T09:00:00Z")));
         ApplicationView s1b = apps.respondToClarification(ip, d1.id(), Set.of("doc-ip-1"), null, null);
         check(s1b.status() == ApplicationStatus.APPROVED, "после сводки заявка одобрена на запрошенных условиях");
+        String why = s1b.decision().reasons().get(0).text();
+        check(why.contains("450\u00a0000,00") && why.contains("10,3%") && why.contains("20.10.2026") && !why.contains("450000.00"),
+                "текст решения: суммы с разделителями разрядов, запятая, дата по-русски: " + why);
         check(s1b.bankData() == null, "клиент не видит сырые банковские проверки");
         check(apps.get(emp, d1.id()).bankData() != null, "сотрудник видит результаты проверок");
         ApplicationView issued = apps.acceptOffer(ip, d1.id());

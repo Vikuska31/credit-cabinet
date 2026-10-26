@@ -1,0 +1,100 @@
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 24px 16px 64px;
+  display: grid;
+  gap: 16px;
+}
+.head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.head h1 {
+  margin: 0;
+  flex: 1;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+.card {
+  display: grid;
+  gap: 12px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e8e9ec;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(23, 27, 38, 0.07);
+}
+.card h2,
+.card h3 {
+  margin: 0;
+}
+.error {
+  margin: 0;
+  color: #c72720;
+}
+.list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 14px;
+  border: 1px solid #e8e9ec;
+  border-radius: 14px;
+}
+.field {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #6b7280;
+}
+.field select,
+.field input,
+.field textarea {
+  padding: 12px 16px;
+  font: inherit;
+  color: #16181d;
+  background: #f1f2f5;
+  border: 0;
+  border-radius: 12px;
+}
+.field textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.inquiry {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid #e8e9ec;
+  border-radius: 14px;
+}
+.inquiry p {
+  margin: 0;
+}
+.history {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 14px;
+}
+@media (max-width: 860px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

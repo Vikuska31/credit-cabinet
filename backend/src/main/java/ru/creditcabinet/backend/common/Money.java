@@ -18,4 +18,17 @@ public final class Money {
     public static BigDecimal rub(String value) {
         return rub(new BigDecimal(value));
     }
+
+    /** «2 933 333,33» — как на сайте (русская локаль: неразрывный пробел между разрядами, запятая). */
+    public static String format(BigDecimal value) {
+        java.text.NumberFormat f = java.text.NumberFormat.getNumberInstance(java.util.Locale.forLanguageTag("ru-RU"));
+        f.setMinimumFractionDigits(2);
+        f.setMaximumFractionDigits(2);
+        return f.format(value);
+    }
+
+    /** «20.10.2026». */
+    public static String format(java.time.LocalDate date) {
+        return date == null ? "—" : date.format(java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy"));
+    }
 }

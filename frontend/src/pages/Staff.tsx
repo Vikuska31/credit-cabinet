@@ -1,10 +1,15 @@
 import { useEffect, useState } from 'react';
+import { Button } from '@alfalab/core-components/button';
+import { Tag } from '@alfalab/core-components/tag';
+import { Typography } from '@alfalab/core-components/typography';
 import { getApplications, getApplication } from '../api/applications';
 import { fetchApi } from '../api/client';
 import { getGoals } from '../api/catalog';
 import { useApp } from '../context/AppContext';
 import type { Application, GoalInfo } from '../types';
 import { formatRub } from '../utils/format';
+import { STATUS_TONE } from '../utils/status';
+import styles from './Staff.module.css';
 interface Inquiry {
   id: string;
   text: string;
@@ -55,37 +60,55 @@ export default function Staff() {
     }
   };
   return (
-    <main className="cc-staff">
-      <div className="cc-actions">
-        <h1>Кабинет сотрудника</h1>
-        <span>{user?.fullName}</span>
-        <button className="cc-button secondary" onClick={logout}>
+    <main className={styles.page}>
+      <div className={styles.head}>
+        <Typography.Title tag="h1" view="large" weight="bold">
+          Кабинет сотрудника
+        </Typography.Title>
+        <Typography.Text view="primary-medium" color="secondary">
+          {user?.fullName}
+        </Typography.Text>
+        <Button view="secondary" size={40} onClick={logout}>
           Выйти
-        </button>
+        </Button>
       </div>
       {error && (
-        <p role="alert" className="cc-error">
+        <p role="alert" className={styles.error}>
           {error}
         </p>
       )}
-      <div className="cc-grid">
-        <section className="cc-card">
-          <h2>Отправленные заявки</h2>
-          {apps.length === 0 && <p>Заявок нет.</p>}
-          {apps.map((a) => (
-            <p key={a.id}>
-              <button
-                className="cc-link"
-                onClick={() => void run(async () => setSelected(await getApplication(a.id)))}
-              >
-                № {a.number} · {a.companyInn} · {a.statusTitle}
-              </button>
-            </p>
-          ))}
+      <div className={styles.grid}>
+        <section className={styles.card}>
+          <Typography.Title tag="h2" view="small" weight="bold">
+            Отправленные заявки
+          </Typography.Title>
+          {apps.length === 0 && (
+            <Typography.Text view="primary-medium" color="secondary" tag="div">
+              Заявок нет.
+            </Typography.Text>
+          )}
+          <ul className={styles.list}>
+            {apps.map((a) => (
+              <li className={styles.row} key={a.id}>
+                <Button
+                  view="text"
+                  size={32}
+                  onClick={() => void run(async () => setSelected(await getApplication(a.id)))}
+                >
+                  № {a.number} · {a.companyInn} · {a.statusTitle}
+                </Button>
+                <Tag view="filled" size={32} className={`tag tag--${STATUS_TONE[a.status]}`}>
+                  {a.statusTitle}
+                </Tag>
+              </li>
+            ))}
+          </ul>
         </section>
-        <section className="cc-card">
-          <h2>Вопросы по цели</h2>
-          <label>
+        <section className={styles.card}>
+          <Typography.Title tag="h2" view="small" weight="bold">
+            Вопросы по цели
+          </Typography.Title>
+          <label className={styles.field}>
             Предложить категорию
             <select
               aria-label="Предложить категорию"
@@ -102,7 +125,7 @@ export default function Staff() {
                 ))}
             </select>
           </label>
-          <label>
+          <label className={styles.field}>
             Ответ клиенту
             <textarea
               aria-label="Ответ клиенту"
@@ -110,14 +133,19 @@ export default function Staff() {
               onChange={(e) => setMessage(e.target.value)}
             />
           </label>
-          {inquiries.length === 0 && <p>Нет открытых вопросов.</p>}
+          {inquiries.length === 0 && (
+            <Typography.Text view="primary-medium" color="secondary" tag="div">
+              Нет открытых вопросов.
+            </Typography.Text>
+          )}
           {inquiries.map((q) => (
-            <article className="cc-notice" key={q.id}>
+            <article className={styles.inquiry} key={q.id}>
               <p>
                 {q.companyInn}: {q.text}
               </p>
-              <button
-                className="cc-button"
+              <Button
+                view="accent"
+                size={40}
                 disabled={busy || (!message.trim() && !category)}
                 onClick={() =>
                   void run(() =>
@@ -129,24 +157,30 @@ export default function Staff() {
                 }
               >
                 Ответить на вопрос
-              </button>
+              </Button>
             </article>
           ))}
         </section>
       </div>
       {selected && (
-        <section className="cc-card">
-          <h2>Заявка № {selected.number}</h2>
-          <p>
+        <section className={styles.card}>
+          <Typography.Title tag="h2" view="small" weight="bold">
+            Заявка № {selected.number}
+          </Typography.Title>
+          <Typography.Text view="primary-medium" tag="div">
             {selected.statusTitle} ·{' '}
             {selected.amount == null ? 'Сумма не указана' : formatRub(selected.amount)} ·{' '}
             {selected.termMonths} мес.
-          </p>
+          </Typography.Text>
           {selected.decision?.reasons.map((r) => (
-            <p key={r.code}>{r.text}</p>
+            <Typography.Text view="primary-small" color="secondary" tag="div" key={r.code}>
+              {r.text}
+            </Typography.Text>
           ))}
-          <h3>Запросить уточнение</h3>
-          <label>
+          <Typography.Title tag="h3" view="xsmall" weight="bold">
+            Запросить уточнение
+          </Typography.Title>
+          <label className={styles.field}>
             Какое поле или документ уточнить
             <input
               aria-label="Поле уточнения"
@@ -155,7 +189,7 @@ export default function Staff() {
               placeholder="Например, назначение средств"
             />
           </label>
-          <label>
+          <label className={styles.field}>
             Сообщение клиенту
             <textarea
               aria-label="Сообщение клиенту"
@@ -163,37 +197,44 @@ export default function Staff() {
               onChange={(e) => setMessage(e.target.value)}
             />
           </label>
-          <button
-            className="cc-button"
-            disabled={
-              busy ||
-              !message.trim() ||
-              !['UNDER_REVIEW', 'NEEDS_CLARIFICATION', 'APPROVED', 'COUNTER_OFFERED'].includes(
-                selected.status,
-              )
-            }
-            onClick={() =>
-              void run(async () =>
-                setSelected(
-                  await fetchApi<Application>(
-                    '/api/staff/applications/' + selected.id + '/clarification-requests',
-                    {
-                      method: 'POST',
-                      body: JSON.stringify({ field, documentType: null, message }),
-                    },
+          <div>
+            <Button
+              view="accent"
+              size={48}
+              disabled={
+                busy ||
+                !message.trim() ||
+                !['UNDER_REVIEW', 'NEEDS_CLARIFICATION', 'APPROVED', 'COUNTER_OFFERED'].includes(
+                  selected.status,
+                )
+              }
+              onClick={() =>
+                void run(async () =>
+                  setSelected(
+                    await fetchApi<Application>(
+                      '/api/staff/applications/' + selected.id + '/clarification-requests',
+                      {
+                        method: 'POST',
+                        body: JSON.stringify({ field, documentType: null, message }),
+                      },
+                    ),
                   ),
-                ),
-              )
-            }
-          >
-            Отправить запрос
-          </button>
-          <h3>История</h3>
-          {selected.history.map((h, i) => (
-            <p key={i}>
-              {new Date(h.at).toLocaleString('ru-RU')} · {h.message}
-            </p>
-          ))}
+                )
+              }
+            >
+              Отправить запрос
+            </Button>
+          </div>
+          <Typography.Title tag="h3" view="xsmall" weight="bold">
+            История
+          </Typography.Title>
+          <ul className={styles.history}>
+            {selected.history.map((h, i) => (
+              <li key={i}>
+                {new Date(h.at).toLocaleString('ru-RU')} · {h.message}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
     </main>
