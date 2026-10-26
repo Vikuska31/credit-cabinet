@@ -13,7 +13,7 @@ import { getDocuments } from '../api/catalog';
 import { useApp } from '../context/AppContext';
 import type { Application, ApplicationStatus, DocumentRef } from '../types';
 import { APPLICATION_STATUS_LABELS } from '../types';
-import { formatMonths, formatRub } from '../utils/format';
+import { formatMonths, formatOfferValue, formatRub } from '../utils/format';
 import { GOAL_LABELS, OFFER_FIELD_LABELS } from '../utils/goals';
 import { STATUS_TONE, isFinalStatus } from '../utils/status';
 import styles from './Applications.module.css';
@@ -421,7 +421,9 @@ export default function Applications() {
                 </dl>
                 {opened.decision?.changes.map((c) => (
                   <p className={styles.change} key={c.field}>
-                    {OFFER_FIELD_LABELS[c.field] || 'Условие'}: {c.requested} → {c.offered}
+                    {OFFER_FIELD_LABELS[c.field] || 'Условие'}:{' '}
+                    {formatOfferValue(c.field, c.requested)} →{' '}
+                    {formatOfferValue(c.field, c.offered)}
                   </p>
                 ))}
               </div>
